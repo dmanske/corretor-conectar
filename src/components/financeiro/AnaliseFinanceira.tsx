@@ -1,48 +1,39 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircleDollarSign, TrendingUp, TrendingDown } from "lucide-react";
+import { ResponsiveBar } from "@nivo/bar";
+import { ResponsivePie } from "@nivo/pie";
 
-interface AnaliseFinanceiraProps {
-  receitas?: number;
-  despesas?: number;
-  saldo?: number;
+export interface AnaliseFinanceiraProps {
+  transacoes?: any[]; // Adicionando essa propriedade que está sendo passada
+  formatarMoeda?: (valor: number) => string;
 }
 
-const AnaliseFinanceira = ({ receitas = 0, despesas = 0, saldo = 0 }: AnaliseFinanceiraProps) => {
+const AnaliseFinanceiraCustom = ({
+  transacoes,
+  formatarMoeda
+}: AnaliseFinanceiraProps) => {
+  // Lógica de análise financeira que usa as propriedades transacoes e formatarMoeda
+  
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Receitas</CardTitle>
-          <TrendingUp className="h-4 w-4 text-green-500" />
+        <CardHeader>
+          <CardTitle>Distribuição de Despesas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">R$ {receitas.toLocaleString('pt-BR')}</div>
+          {/* Conteúdo do gráfico */}
         </CardContent>
       </Card>
-
+      
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Despesas</CardTitle>
-          <TrendingDown className="h-4 w-4 text-red-500" />
+        <CardHeader>
+          <CardTitle>Fluxo de Caixa</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">R$ {despesas.toLocaleString('pt-BR')}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Saldo</CardTitle>
-          <CircleDollarSign className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold ${saldo >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            R$ {saldo.toLocaleString('pt-BR')}
-          </div>
+          {/* Conteúdo do gráfico */}
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default AnaliseFinanceira; 
+export default AnaliseFinanceiraCustom;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -42,8 +41,7 @@ const ComissaoForm = ({
     valorComissaoCorretor: 0,
     dataContrato: format(new Date(), "yyyy-MM-dd"),
     dataPagamento: null,
-    status: "Pendente",
-    recebimentos: [],
+    status: "Pendente"
   });
   
   const [metaValor, setMetaValor] = useState(currentMeta || 0);
@@ -181,8 +179,7 @@ const ComissaoForm = ({
       valorComissaoCorretor: 0,
       dataContrato: format(new Date(), "yyyy-MM-dd"),
       dataPagamento: null,
-      status: "Pendente",
-      recebimentos: [],
+      status: "Pendente"
     });
     setClienteSelecionadoId("");
   };

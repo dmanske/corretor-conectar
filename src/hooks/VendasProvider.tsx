@@ -1,10 +1,17 @@
-import React, { createContext, useContext } from "react";
-import useVendasHook from "./useVendas";
 
-const VendasContext = createContext(null);
+import React, { createContext, useContext } from "react";
+import { useVendas } from "./useVendas";
+
+// Importante: Definir o tipo correto para o contexto
+type VendasContextType = ReturnType<typeof useVendas> | null;
+
+// Inicialize o contexto com null
+const VendasContext = createContext<VendasContextType>(null);
 
 export const VendasProvider = ({ children }: { children: React.ReactNode }) => {
-  const vendasHook = useVendasHook();
+  // Use o hook dentro do componente funcional
+  const vendasHook = useVendas();
+  
   return (
     <VendasContext.Provider value={vendasHook}>
       {children}
