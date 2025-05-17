@@ -1,5 +1,6 @@
+
 import React, { useState } from "react";
-import { useComissoes } from "../hooks/useComissoes";
+import { useComissoes, type ComissaoStatus } from "../hooks/useComissoes";
 import { useVendas } from "../hooks/useVendas";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -31,7 +32,7 @@ const Comissoes = () => {
     valorComissaoImobiliaria: "",
     valorComissaoCorretor: "",
     dataContrato: "",
-    status: "Pendente" as "Pendente" | "Parcial" | "Recebido"
+    status: "Pendente" as ComissaoStatus
   });
   const [showJustifyModal, setShowJustifyModal] = useState(false);
   const [justificativa, setJustificativa] = useState("");
@@ -66,6 +67,8 @@ const Comissoes = () => {
       valorComissaoImobiliaria: Number(formData.valorComissaoImobiliaria),
       valorComissaoCorretor: Number(formData.valorComissaoCorretor),
       dataContrato: formData.dataContrato,
+      dataVenda: venda.dataVenda, // Adicionando campo obrigatório
+      dataPagamento: null, // Adicionando campo obrigatório
       status: formData.status
     };
 
@@ -176,16 +179,16 @@ const Comissoes = () => {
                     <div className="space-y-1">
                       <div className="flex justify-between">
                         <span>Valor Original:</span>
-                        <span>{formatarMoeda(comissao.valorOriginalVenda)}</span>
+                        <span>{formatarMoeda(comissao.valorOriginalVenda || 0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Valor Atual:</span>
-                        <span>{formatarMoeda(comissao.valorAtualVenda)}</span>
+                        <span>{formatarMoeda(comissao.valorAtualVenda || 0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Diferença:</span>
-                        <span className={comissao.diferencaValor > 0 ? "text-green-600" : "text-red-600"}>
-                          {formatarMoeda(comissao.diferencaValor)}
+                        <span className={(comissao.diferencaValor || 0) > 0 ? "text-green-600" : "text-red-600"}>
+                          {formatarMoeda(comissao.diferencaValor || 0)}
                         </span>
                       </div>
                     </div>
@@ -295,7 +298,7 @@ const Comissoes = () => {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value: "Pendente" | "Parcial" | "Recebido") =>
+                onValueChange={(value: ComissaoStatus) =>
                   setFormData((prev) => ({ ...prev, status: value }))
                 }
               >
@@ -328,16 +331,16 @@ const Comissoes = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Valor Original:</span>
-                  <span>{formatarMoeda(selectedComissao?.valorOriginalVenda)}</span>
+                  <span>{formatarMoeda(selectedComissao?.valorOriginalVenda || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Valor Atual:</span>
-                  <span>{formatarMoeda(selectedComissao?.valorAtualVenda)}</span>
+                  <span>{formatarMoeda(selectedComissao?.valorAtualVenda || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Diferença:</span>
-                  <span className={selectedComissao?.diferencaValor > 0 ? "text-green-600" : "text-red-600"}>
-                    {formatarMoeda(selectedComissao?.diferencaValor)}
+                  <span className={(selectedComissao?.diferencaValor || 0) > 0 ? "text-green-600" : "text-red-600"}>
+                    {formatarMoeda(selectedComissao?.diferencaValor || 0)}
                   </span>
                 </div>
               </div>
@@ -364,4 +367,4 @@ const Comissoes = () => {
   );
 };
 
-export default Comissoes; 
+export default Comissoes;

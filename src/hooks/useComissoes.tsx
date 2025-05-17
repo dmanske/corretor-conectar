@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
 export type ComissaoStatus = "Pendente" | "Parcial" | "Recebido";
+export type StatusValor = "Atualizado" | "Desatualizado" | "Justificado";
 
 export interface Comissao {
   id: string;
@@ -17,6 +18,12 @@ export interface Comissao {
   dataVenda: string;
   dataPagamento: string | null;
   status: ComissaoStatus;
+  // Campos adicionais para conformidade com o banco de dados
+  valorOriginalVenda?: number;
+  valorAtualVenda?: number;
+  diferencaValor?: number;
+  statusValor?: StatusValor;
+  justificativa?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -56,6 +63,11 @@ export const useComissoes = () => {
               dataVenda: comissao.data_venda,
               dataPagamento: comissao.data_pagamento,
               status: comissao.status as ComissaoStatus,
+              valorOriginalVenda: comissao.valor_original_venda,
+              valorAtualVenda: comissao.valor_atual_venda,
+              diferencaValor: comissao.diferenca_valor,
+              statusValor: comissao.status_valor as StatusValor,
+              justificativa: comissao.justificativa,
               createdAt: comissao.created_at,
               updatedAt: comissao.updated_at,
             }))
@@ -93,6 +105,7 @@ export const useComissoes = () => {
           data_venda: comissao.dataVenda,
           data_pagamento: comissao.dataPagamento,
           status: comissao.status,
+          status_valor: comissao.statusValor || "Atualizado",
           user_id: user.id,
         })
         .select();
@@ -114,6 +127,11 @@ export const useComissoes = () => {
           dataVenda: data[0].data_venda,
           dataPagamento: data[0].data_pagamento,
           status: data[0].status as ComissaoStatus,
+          valorOriginalVenda: data[0].valor_original_venda,
+          valorAtualVenda: data[0].valor_atual_venda,
+          diferencaValor: data[0].diferenca_valor,
+          statusValor: data[0].status_valor as StatusValor,
+          justificativa: data[0].justificativa,
           createdAt: data[0].created_at,
           updatedAt: data[0].updated_at,
         };
@@ -147,6 +165,8 @@ export const useComissoes = () => {
       if (comissaoAtualizada.dataVenda !== undefined) atualizacoes.data_venda = comissaoAtualizada.dataVenda;
       if (comissaoAtualizada.dataPagamento !== undefined) atualizacoes.data_pagamento = comissaoAtualizada.dataPagamento;
       if (comissaoAtualizada.status !== undefined) atualizacoes.status = comissaoAtualizada.status;
+      if (comissaoAtualizada.statusValor !== undefined) atualizacoes.status_valor = comissaoAtualizada.statusValor;
+      if (comissaoAtualizada.justificativa !== undefined) atualizacoes.justificativa = comissaoAtualizada.justificativa;
 
       const { error } = await supabase
         .from("comissoes")
@@ -278,7 +298,7 @@ export const useComissoes = () => {
   const getMetaMensal = async (mes: number, ano: number): Promise<number> => {
     try {
       const { data, error } = await supabase
-        .from('metas_comissoes')
+        .from('metas')
         .select('valor')
         .eq('mes', mes)
         .eq('ano', ano)
@@ -297,14 +317,17 @@ export const useComissoes = () => {
   };
 
   const adicionarMetaMensal = async (mes: number, ano: number, valor: number) => {
+    if (!user) return false;
+    
     try {
       const { error } = await supabase
-        .from('metas_comissoes')
+        .from('metas')
         .upsert({
           mes: mes,
           ano: ano,
-          valor: valor
-        }, { onConflict: ['mes', 'ano'] });
+          valor: valor,
+          user_id: user.id
+        }, { onConflict: ['mes', 'ano', 'user_id'] });
 
       if (error) {
         throw error;
@@ -314,6 +337,7 @@ export const useComissoes = () => {
         description: `A meta de comissão para ${mes}/${ano} foi atualizada com sucesso.`,
         variant: "success"
       });
+      return true;
     } catch (error) {
       console.error("Erro ao adicionar meta mensal:", error);
       toast({
@@ -321,6 +345,7 @@ export const useComissoes = () => {
         title: "Erro ao definir meta",
         description: "Não foi possível definir a meta mensal.",
       });
+      return false;
     }
   };
 

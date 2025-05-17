@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -101,7 +102,7 @@ export const useVendas = () => {
 
         setVendas([novaVenda, ...vendas]);
         
-        // Criar comissão pendente automaticamente
+        // Criar comissão pendente automaticamente com todos os campos necessários
         await adicionarComissao({
           vendaId: novaVenda.id,
           cliente: clienteNome,
@@ -111,6 +112,7 @@ export const useVendas = () => {
           valorComissaoCorretor: 0, // Será preenchido depois
           dataContrato: novaVenda.dataVenda,
           dataVenda: novaVenda.dataVenda,
+          dataPagamento: null, // Campo obrigatório para o tipo
           status: "Pendente"
         });
         

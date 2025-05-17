@@ -1,6 +1,5 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResponsiveBar } from "@nivo/bar";
-import { ResponsivePie } from "@nivo/pie";
 
 export interface AnaliseFinanceiraProps {
   transacoes?: any[]; // Adicionando essa propriedade que está sendo passada
@@ -20,7 +19,9 @@ const AnaliseFinanceiraCustom = ({
           <CardTitle>Distribuição de Despesas</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Conteúdo do gráfico */}
+          <div className="min-h-[300px] flex items-center justify-center">
+            <p className="text-gray-500">Gráfico de distribuição (em desenvolvimento)</p>
+          </div>
         </CardContent>
       </Card>
       
@@ -29,7 +30,9 @@ const AnaliseFinanceiraCustom = ({
           <CardTitle>Fluxo de Caixa</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Conteúdo do gráfico */}
+          <div className="min-h-[300px] flex items-center justify-center">
+            <p className="text-gray-500">Gráfico de fluxo (em desenvolvimento)</p>
+          </div>
         </CardContent>
       </Card>
     </div>
