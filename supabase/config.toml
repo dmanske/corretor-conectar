@@ -1,1 +1,30 @@
+
 project_id = "dazmyjjanixtjiyiixqu"
+
+# Configure row level security for all tables
+[postgres_config]
+enable_db_webhooks = true
+
+# Row Level Security for clientes table
+[[postgres_config.db_webhooks]]
+table = "clientes"
+events = ["INSERT", "UPDATE", "DELETE"]
+condition = "user_id = auth.uid()"
+
+# Row Level Security for vendas table
+[[postgres_config.db_webhooks]]
+table = "vendas"
+events = ["INSERT", "UPDATE", "DELETE"]
+condition = "user_id = auth.uid()"
+
+# Row Level Security for comissoes table
+[[postgres_config.db_webhooks]]
+table = "comissoes"
+events = ["INSERT", "UPDATE", "DELETE"]
+condition = "user_id = auth.uid()"
+
+# Row Level Security for metas table
+[[postgres_config.db_webhooks]]
+table = "metas"
+events = ["INSERT", "UPDATE", "DELETE"]
+condition = "user_id = auth.uid()"

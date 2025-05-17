@@ -11,7 +11,6 @@ export type Database = {
     Tables: {
       clientes: {
         Row: {
-          cep: string | null
           cidade: string | null
           complemento: string | null
           cpf: string | null
@@ -28,7 +27,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          cep?: string | null
           cidade?: string | null
           complemento?: string | null
           cpf?: string | null
@@ -45,7 +43,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          cep?: string | null
           cidade?: string | null
           complemento?: string | null
           cpf?: string | null
@@ -63,121 +60,56 @@ export type Database = {
         }
         Relationships: []
       }
-      comissao_recebimentos: {
-        Row: {
-          comissao_id: string | null
-          data: string
-          id: string
-          valor: number
-        }
-        Insert: {
-          comissao_id?: string | null
-          data: string
-          id?: string
-          valor: number
-        }
-        Update: {
-          comissao_id?: string | null
-          data?: string
-          id?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comissao_recebimentos_comissao_id_fkey"
-            columns: ["comissao_id"]
-            isOneToOne: false
-            referencedRelation: "comissoes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_comissao"
-            columns: ["comissao_id"]
-            isOneToOne: false
-            referencedRelation: "comissoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comissoes: {
         Row: {
           cliente: string
           created_at: string | null
-          data_atualizacao: string | null
           data_contrato: string
           data_pagamento: string | null
           data_venda: string
-          diferenca_valor: number | null
           id: string
           imovel: string
-          justificativa: string | null
           nota_fiscal: string | null
           status: string
-          status_valor: string | null
           updated_at: string | null
           user_id: string
-          valor_atual_venda: number | null
           valor_comissao_corretor: number
           valor_comissao_imobiliaria: number
-          valor_original_venda: number | null
           valor_venda: number
-          venda_id: string | null
         }
         Insert: {
           cliente: string
           created_at?: string | null
-          data_atualizacao?: string | null
           data_contrato: string
           data_pagamento?: string | null
           data_venda: string
-          diferenca_valor?: number | null
           id?: string
           imovel: string
-          justificativa?: string | null
           nota_fiscal?: string | null
           status: string
-          status_valor?: string | null
           updated_at?: string | null
           user_id: string
-          valor_atual_venda?: number | null
           valor_comissao_corretor: number
           valor_comissao_imobiliaria: number
-          valor_original_venda?: number | null
           valor_venda: number
-          venda_id?: string | null
         }
         Update: {
           cliente?: string
           created_at?: string | null
-          data_atualizacao?: string | null
           data_contrato?: string
           data_pagamento?: string | null
           data_venda?: string
-          diferenca_valor?: number | null
           id?: string
           imovel?: string
-          justificativa?: string | null
           nota_fiscal?: string | null
           status?: string
-          status_valor?: string | null
           updated_at?: string | null
           user_id?: string
-          valor_atual_venda?: number | null
           valor_comissao_corretor?: number
           valor_comissao_imobiliaria?: number
-          valor_original_venda?: number | null
           valor_venda?: number
-          venda_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "comissoes_venda_id_fkey"
-            columns: ["venda_id"]
-            isOneToOne: false
-            referencedRelation: "vendas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       metas: {
         Row: {
@@ -202,87 +134,24 @@ export type Database = {
       }
       profiles: {
         Row: {
-          avatar_url: string | null
           created_at: string | null
           email: string | null
           id: string
           name: string | null
-          status: string | null
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string | null
           email?: string | null
           id: string
           name?: string | null
-          status?: string | null
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           name?: string | null
-          status?: string | null
         }
         Relationships: []
-      }
-      transacoes: {
-        Row: {
-          cliente_id: string | null
-          comissao_id: string | null
-          created_at: string
-          data: string
-          descricao: string
-          forma_pagamento: string
-          id: string
-          tipo: string
-          updated_at: string
-          user_id: string
-          valor: number
-        }
-        Insert: {
-          cliente_id?: string | null
-          comissao_id?: string | null
-          created_at?: string
-          data: string
-          descricao: string
-          forma_pagamento: string
-          id?: string
-          tipo: string
-          updated_at?: string
-          user_id: string
-          valor: number
-        }
-        Update: {
-          cliente_id?: string | null
-          comissao_id?: string | null
-          created_at?: string
-          data?: string
-          descricao?: string
-          forma_pagamento?: string
-          id?: string
-          tipo?: string
-          updated_at?: string
-          user_id?: string
-          valor?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transacoes_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transacoes_comissao_id_fkey"
-            columns: ["comissao_id"]
-            isOneToOne: false
-            referencedRelation: "comissoes"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       vendas: {
         Row: {
