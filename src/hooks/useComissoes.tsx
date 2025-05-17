@@ -28,9 +28,21 @@ export interface Comissao {
   dataRecebimentoParcial?: string;
 }
 
+export interface Meta {
+  id: string;
+  valor: number;
+  mes: number;
+  ano: number;
+  created_at?: string;
+}
+
 export const useComissoes = () => {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
   const [metaComissao, setMetaComissao] = useState<number>(0);
+  const [metasMensais, setMetasMensais] = useState<Meta[]>([]);
+  const [metaAtual, setMetaAtual] = useState<Meta | null>(null);
+  const [mesAtual, setMesAtual] = useState<number>(new Date().getMonth() + 1);
+  const [anoAtual, setAnoAtual] = useState<number>(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(true);
   const [totais, setTotais] = useState({
     totalComissoes: 0,
@@ -93,32 +105,67 @@ export const useComissoes = () => {
     fetchComissoes();
   }, [user]);
 
-  // Fetch meta
+  // Fetch todas as metas
   useEffect(() => {
-    const fetchMeta = async () => {
+    const fetchMetas = async () => {
       if (!user) return;
       
       try {
         const { data, error } = await supabase
           .from("metas")
           .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1);
+          .order("created_at", { ascending: false });
 
         if (error) {
           throw error;
         }
 
         if (data && data.length > 0) {
-          setMetaComissao(data[0].valor);
+          const metasFormatadas = data.map((meta: any) => ({
+            id: meta.id,
+            valor: meta.valor,
+            mes: meta.mes || new Date().getMonth() + 1,
+            ano: meta.ano || new Date().getFullYear(),
+            created_at: meta.created_at
+          }));
+          
+          setMetasMensais(metasFormatadas);
+          
+          // Busca meta do mês atual
+          buscarMetaAtual(mesAtual, anoAtual, metasFormatadas);
         }
       } catch (error) {
-        console.error("Error fetching meta:", error);
+        console.error("Error fetching metas:", error);
       }
     };
 
-    fetchMeta();
-  }, [user]);
+    fetchMetas();
+  }, [user, mesAtual, anoAtual]);
+
+  // Função para buscar meta do mês/ano específico
+  const buscarMetaAtual = (mes: number, ano: number, metas: Meta[] = metasMensais) => {
+    const metaEncontrada = metas.find(m => m.mes === mes && m.ano === ano);
+    
+    if (metaEncontrada) {
+      setMetaAtual(metaEncontrada);
+      setMetaComissao(metaEncontrada.valor);
+    } else {
+      setMetaAtual(null);
+      // Se não tem meta para o mês atual, vamos tentar encontrar a meta mais recente
+      if (metas.length > 0) {
+        setMetaComissao(metas[0].valor);
+      } else {
+        setMetaComissao(0);
+      }
+    }
+  };
+
+  // Função para mudar o mês/ano atual
+  const alterarPeriodoAtual = (mes: number, ano: number) => {
+    setMesAtual(mes);
+    setAnoAtual(ano);
+    buscarMetaAtual(mes, ano);
+  };
 
   const adicionarComissao = async (novaComissao: Partial<Comissao>) => {
     if (!user) return;
@@ -349,26 +396,81 @@ export const useComissoes = () => {
     }
   };
 
-  const atualizarMeta = async (valor: number) => {
+  const atualizarMeta = async (valor: number, mes: number = mesAtual, ano: number = anoAtual) => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
+      // Verificar se já existe uma meta para o mês/ano especificado
+      const { data: metasExistentes, error: erroConsulta } = await supabase
         .from("metas")
-        .insert({
-          valor: valor,
-          user_id: user.id
-        });
-
-      if (error) {
-        throw error;
+        .select("*")
+        .eq("mes", mes)
+        .eq("ano", ano)
+        .eq("user_id", user.id);
+        
+      if (erroConsulta) {
+        throw erroConsulta;
+      }
+      
+      if (metasExistentes && metasExistentes.length > 0) {
+        // Atualizar meta existente
+        const { error } = await supabase
+          .from("metas")
+          .update({
+            valor: valor
+          })
+          .eq("id", metasExistentes[0].id);
+          
+        if (error) {
+          throw error;
+        }
+      } else {
+        // Inserir nova meta
+        const { error } = await supabase
+          .from("metas")
+          .insert({
+            valor: valor,
+            mes: mes,
+            ano: ano,
+            user_id: user.id
+          });
+          
+        if (error) {
+          throw error;
+        }
       }
 
-      setMetaComissao(valor);
+      // Atualizar estado local
+      const novasMetas = [...metasMensais];
+      const indexMetaExistente = novasMetas.findIndex(m => m.mes === mes && m.ano === ano);
+      
+      if (indexMetaExistente !== -1) {
+        novasMetas[indexMetaExistente].valor = valor;
+      } else {
+        novasMetas.push({
+          id: 'temp-id', // será substituído pelo ID real na próxima busca
+          valor: valor,
+          mes: mes,
+          ano: ano
+        });
+      }
+      
+      setMetasMensais(novasMetas);
+      
+      // Atualizar meta atual se for o mês/ano selecionado
+      if (mes === mesAtual && ano === anoAtual) {
+        setMetaComissao(valor);
+        setMetaAtual({
+          id: metasExistentes && metasExistentes.length > 0 ? metasExistentes[0].id : 'temp-id',
+          valor: valor,
+          mes: mes,
+          ano: ano
+        });
+      }
 
       toast({
         title: "Meta atualizada",
-        description: "Meta de comissão atualizada com sucesso"
+        description: `Meta de comissão para ${obterNomeMes(mes)}/${ano} atualizada com sucesso`
       });
     } catch (error) {
       console.error("Error updating meta:", error);
@@ -378,6 +480,15 @@ export const useComissoes = () => {
         description: "Não foi possível atualizar a meta. Tente novamente."
       });
     }
+  };
+
+  // Função auxiliar para obter o nome do mês
+  const obterNomeMes = (mes: number): string => {
+    const meses = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ];
+    return meses[mes - 1] || "";
   };
 
   const filtrarComissoes = (tab: string, filtroTexto: string, periodo: string) => {
@@ -520,20 +631,124 @@ export const useComissoes = () => {
     if (error) throw error;
     return novo && novo[0];
   };
+  
+  // Funções de exportação
+  
+  // Exportar para CSV
+  const exportarParaCSV = (comissoesFiltradas: Comissao[], filtros: any = {}) => {
+    try {
+      // Filtrar as colunas conforme o usuário selecionou
+      const colunas = {
+        cliente: filtros.incluirCliente !== false,
+        imovel: filtros.incluirImovel !== false,
+        valorVenda: filtros.incluirValorVenda !== false,
+        valorComissaoCorretor: filtros.incluirValorComissao !== false,
+        dataVenda: filtros.incluirDataVenda !== false,
+        dataPagamento: filtros.incluirDataPagamento !== false,
+        status: filtros.incluirStatus !== false
+      };
+      
+      // Cabeçalho do CSV
+      let cabecalhos = [];
+      let campos = [];
+      
+      if (colunas.cliente) { cabecalhos.push('Cliente'); campos.push('cliente'); }
+      if (colunas.imovel) { cabecalhos.push('Imóvel'); campos.push('imovel'); }
+      if (colunas.valorVenda) { cabecalhos.push('Valor Venda'); campos.push('valorVenda'); }
+      if (colunas.valorComissaoCorretor) { cabecalhos.push('Comissão'); campos.push('valorComissaoCorretor'); }
+      if (colunas.dataVenda) { cabecalhos.push('Data Venda'); campos.push('dataVenda'); }
+      if (colunas.dataPagamento) { cabecalhos.push('Data Pagamento'); campos.push('dataPagamento'); }
+      if (colunas.status) { cabecalhos.push('Status'); campos.push('status'); }
+      
+      let csvContent = cabecalhos.join(';') + '\n';
+      
+      // Adicionar linhas de dados
+      comissoesFiltradas.forEach(comissao => {
+        let linha = [];
+        
+        campos.forEach(campo => {
+          if (campo === 'dataVenda' || campo === 'dataPagamento') {
+            const data = comissao[campo as keyof Comissao];
+            linha.push(data ? new Date(data.toString()).toLocaleDateString() : '');
+          } 
+          else if (campo === 'valorVenda' || campo === 'valorComissaoCorretor') {
+            const valor = comissao[campo as keyof Comissao];
+            linha.push(typeof valor === 'number' ? valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00');
+          }
+          else {
+            linha.push(comissao[campo as keyof Comissao] || '');
+          }
+        });
+        
+        csvContent += linha.join(';') + '\n';
+      });
+      
+      // Criar blob e link para download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `comissoes_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      toast({
+        title: "Exportação concluída",
+        description: "Arquivo CSV baixado com sucesso",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Erro ao exportar CSV:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível exportar os dados para CSV"
+      });
+      
+      return false;
+    }
+  };
+  
+  // Função para exportar para PDF (usando biblioteca externa como jsPDF)
+  const exportarParaPDF = (comissoesFiltradas: Comissao[], filtros: any = {}) => {
+    // Esta função será implementada quando adicionarmos a biblioteca jsPDF
+    toast({
+      variant: "destructive",
+      title: "Funcionalidade em desenvolvimento",
+      description: "A exportação para PDF será implementada em breve"
+    });
+    
+    return false;
+  };
 
   return {
     comissoes,
     metaComissao,
+    metasMensais,
+    metaAtual,
+    mesAtual,
+    anoAtual,
     isLoading,
     adicionarComissao,
     atualizarComissao,
     marcarComoPago,
     excluirComissao,
     atualizarMeta,
+    alterarPeriodoAtual,
+    buscarMetaAtual,
+    obterNomeMes,
     filtrarComissoes,
     totais,
     getComissaoById,
     getRecebimentosByComissaoId,
-    adicionarRecebimento
+    adicionarRecebimento,
+    exportarParaCSV,
+    exportarParaPDF
   };
 };

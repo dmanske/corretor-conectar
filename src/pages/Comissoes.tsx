@@ -1,9 +1,10 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Download, PlusCircle, Cog, Loader2 } from "lucide-react";
+import { Download, PlusCircle, Cog, Loader2, BarChart3 } from "lucide-react";
 
 // Custom hooks and components
 import { useComissoes } from "@/hooks/useComissoes";
@@ -11,15 +12,17 @@ import ComissoesFilter from "@/components/comissoes/ComissoesFilter";
 import ComissoesSummary from "@/components/comissoes/ComissoesSummary";
 import ComissaoTable from "@/components/comissoes/ComissaoTable";
 import ComissaoForm from "@/components/comissoes/ComissaoForm";
+import ExportDialog from "@/components/comissoes/ExportDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Comissao } from "@/hooks/useComissoes";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const meses = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
   "Jul", "Ago", "Set", "Out", "Nov", "Dez"
 ];
-
-const anoAtual = new Date().getFullYear();
 
 const Comissoes = () => {
   const { toast } = useToast();
@@ -29,6 +32,7 @@ const Comissoes = () => {
   const [periodo, setPeriodo] = useState("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [metaDialogOpen, setMetaDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [comissaoParaEditar, setComissaoParaEditar] = useState<Comissao | null>(null);
   const [mesSelecionado, setMesSelecionado] = useState<number | null>(null);
   
@@ -42,7 +46,13 @@ const Comissoes = () => {
     excluirComissao,
     atualizarMeta,
     filtrarComissoes,
-    totais
+    totais,
+    metasMensais,
+    metaAtual,
+    mesAtual,
+    anoAtual,
+    alterarPeriodoAtual,
+    obterNomeMes
   } = useComissoes();
 
   // Filtrar comissões
@@ -68,7 +78,7 @@ const Comissoes = () => {
       }
     });
     return set;
-  }, [comissoes]);
+  }, [comissoes, anoAtual]);
 
   // Filtra as comissões do mês selecionado
   const comissoesDoMes = useMemo(() => {
@@ -77,7 +87,7 @@ const Comissoes = () => {
       const data = new Date(c.dataVenda);
       return data.getFullYear() === anoAtual && data.getMonth() === mesSelecionado;
     });
-  }, [comissoesFiltradas, mesSelecionado]);
+  }, [comissoesFiltradas, mesSelecionado, anoAtual]);
 
   // Agrupa as comissões do mês por dia
   const comissoesPorDia = useMemo(() => {
@@ -96,11 +106,15 @@ const Comissoes = () => {
     });
   }, [comissoesDoMes]);
 
+  // Atualiza o período atual quando o mês selecionado muda
+  useEffect(() => {
+    if (mesSelecionado !== null) {
+      alterarPeriodoAtual(mesSelecionado + 1, anoAtual);
+    }
+  }, [mesSelecionado, anoAtual, alterarPeriodoAtual]);
+
   const handleExportarRelatorio = () => {
-    toast({
-      title: "Relatório exportado",
-      description: "O relatório foi exportado com sucesso."
-    });
+    setExportDialogOpen(true);
   };
   
   const handleAdicionarOuAtualizarComissao = (comissao: Partial<Comissao>) => {
@@ -108,6 +122,10 @@ const Comissoes = () => {
       // Editar comissão existente
       atualizarComissao(comissaoParaEditar.id, comissao);
       setComissaoParaEditar(null);
+    } else if (comissao.dataContrato && typeof comissao.dataContrato === 'string' && comissao.dataContrato.includes('-')) {
+      // Se enviou no formato mes-ano (para meta mensal)
+      const [mes, ano] = comissao.dataContrato.split('-').map(Number);
+      atualizarMeta(comissao.valorComissaoCorretor || 0, mes, ano);
     } else {
       // Adicionar nova comissão
       adicionarComissao(comissao);
@@ -121,6 +139,15 @@ const Comissoes = () => {
   
   const handleExcluirComissao = (id: string) => {
     excluirComissao(id);
+  };
+  
+  const gerarAnos = () => {
+    const anoAtual = new Date().getFullYear();
+    const anos = [];
+    for (let i = anoAtual - 2; i <= anoAtual + 2; i++) {
+      anos.push(i);
+    }
+    return anos;
   };
 
   if (!isAuthenticated) {
@@ -141,7 +168,7 @@ const Comissoes = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setMetaDialogOpen(true)}>
-            <Cog className="mr-2 h-4 w-4" />
+            <BarChart3 className="mr-2 h-4 w-4" />
             Definir Meta
           </Button>
           <Button variant="outline" onClick={handleExportarRelatorio}>
@@ -157,27 +184,81 @@ const Comissoes = () => {
           </Button>
         </div>
       </div>
-
-      {/* Seletor de meses */}
-      <div className="flex gap-2 mb-2">
-        {meses.map((nome, idx) => (
-          <button
-            key={idx}
-            disabled={!mesesComComissao.has(idx)}
-            className={`px-3 py-1 rounded text-sm border ${idx === mesSelecionado ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-700'} ${!mesesComComissao.has(idx) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-100'}`}
-            onClick={() => setMesSelecionado(idx)}
+      
+      {/* Seletor de ano */}
+      <div className="flex flex-col sm:flex-row gap-4 items-end">
+        <div className="w-full sm:w-1/4">
+          <Label htmlFor="anoSelect" className="text-sm font-medium mb-2 block">Ano</Label>
+          <Select
+            value={String(anoAtual)}
+            onValueChange={(value) => alterarPeriodoAtual(mesAtual, parseInt(value))}
           >
-            {nome}
-          </button>
-        ))}
-        {/* Botão para limpar filtro de mês */}
-        <button
-          className={`px-3 py-1 rounded text-sm border bg-slate-50 text-slate-500 ml-2 ${mesSelecionado === null ? 'font-bold underline' : ''}`}
-          onClick={() => setMesSelecionado(null)}
-        >
-          Todos
-        </button>
+            <SelectTrigger id="anoSelect" className="w-full">
+              <SelectValue placeholder="Selecione o ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {gerarAnos().map((ano) => (
+                <SelectItem key={ano} value={String(ano)}>
+                  {ano}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="w-full">
+          <div className="flex gap-1 mb-2 flex-wrap">
+            {meses.map((nome, idx) => (
+              <button
+                key={idx}
+                disabled={!mesesComComissao.has(idx)}
+                className={`px-3 py-1 rounded text-sm border ${idx === mesSelecionado ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-700'} ${!mesesComComissao.has(idx) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-100'}`}
+                onClick={() => setMesSelecionado(idx !== mesSelecionado ? idx : null)}
+              >
+                {nome}
+              </button>
+            ))}
+            {/* Botão para limpar filtro de mês */}
+            <button
+              className={`px-3 py-1 rounded text-sm border bg-slate-50 text-slate-500 ml-2 ${mesSelecionado === null ? 'font-bold underline' : ''}`}
+              onClick={() => setMesSelecionado(null)}
+            >
+              Todos
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Meta atual */}
+      <Card className="border-2 border-slate-200">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h3 className="text-lg font-medium">Meta de {obterNomeMes(mesAtual)} de {anoAtual}</h3>
+              <p className="text-slate-600">
+                {metaAtual ? 
+                  `Meta definida: ${metaAtual.valor.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}` : 
+                  'Nenhuma meta definida para este mês'
+                }
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="text-sm text-slate-500">Progresso</div>
+                <div className="font-bold text-lg">{atingidoPercentual.toFixed(1)}%</div>
+              </div>
+              
+              <div className="w-32 h-4 bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${atingidoPercentual >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                  style={{ width: `${Math.min(atingidoPercentual, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Cards de resumo */}
       <ComissoesSummary 
@@ -302,9 +383,15 @@ const Comissoes = () => {
       <ComissaoForm 
         open={metaDialogOpen} 
         onOpenChange={setMetaDialogOpen}
-        onAddComissao={(data) => atualizarMeta(data.valorComissaoCorretor || 0)}
+        onAddComissao={handleAdicionarOuAtualizarComissao}
         isMetaForm={true}
-        currentMeta={metaComissao}
+        currentMeta={metaAtual?.valor || metaComissao}
+      />
+
+      <ExportDialog 
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        comissoesParaExportar={comissoesFiltradas}
       />
     </div>
   );

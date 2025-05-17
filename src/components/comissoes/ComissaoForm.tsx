@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useClientes } from "@/hooks/useClientes";
-import { useComissoes } from "@/hooks/useComissoes";
+import { useComissoes, Comissao } from "@/hooks/useComissoes";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { CalendarIcon } from "lucide-react";
 
 interface ComissaoFormProps {
   open: boolean;
@@ -18,20 +20,6 @@ interface ComissaoFormProps {
   isMetaForm?: boolean;
   currentMeta?: number;
   comissaoParaEditar?: Comissao | null;
-}
-
-interface Comissao {
-  id: string;
-  cliente: string;
-  imovel: string;
-  valorVenda: number;
-  valorComissaoImobiliaria: number;
-  valorComissaoCorretor: number;
-  dataContrato: string;
-  dataPagamento: string | null;
-  notaFiscal: string | null;
-  status: "Pendente" | "Parcial" | "Recebido";
-  recebimentos?: { valor: number, data: string }[];
 }
 
 const ComissaoForm = ({ 
@@ -44,7 +32,7 @@ const ComissaoForm = ({
 }: ComissaoFormProps) => {
   const { toast } = useToast();
   const { clientes } = useClientes();
-  const { getRecebimentosByComissaoId, adicionarRecebimento } = useComissoes();
+  const { getRecebimentosByComissaoId, adicionarRecebimento, obterNomeMes } = useComissoes();
   
   const [novaComissao, setNovaComissao] = useState<Partial<Comissao>>({
     cliente: "",
@@ -59,6 +47,8 @@ const ComissaoForm = ({
   });
   
   const [metaValor, setMetaValor] = useState(currentMeta || 0);
+  const [mesSelecionado, setMesSelecionado] = useState<number>(new Date().getMonth() + 1);
+  const [anoSelecionado, setAnoSelecionado] = useState<number>(new Date().getFullYear());
   const [clienteSelecionadoId, setClienteSelecionadoId] = useState<string>("");
   const [recebimentos, setRecebimentos] = useState<{ valor: number, data: string }[]>([]);
   const [novoRecebimento, setNovoRecebimento] = useState({ valor: '', data: '' });
@@ -130,20 +120,34 @@ const ComissaoForm = ({
 
   const handleAdicionarRecebimento = async () => {
     if (!novoRecebimento.valor || !novoRecebimento.data) return;
-    await adicionarRecebimento(comissaoParaEditar.id, parseFloat(novoRecebimento.valor), novoRecebimento.data);
+    await adicionarRecebimento(comissaoParaEditar?.id || "", parseFloat(novoRecebimento.valor), novoRecebimento.data);
     setNovoRecebimento({ valor: '', data: '' });
     // Buscar novamente e mapear para valor/data
-    const lista = await getRecebimentosByComissaoId(comissaoParaEditar.id);
+    const lista = await getRecebimentosByComissaoId(comissaoParaEditar?.id || "");
     setRecebimentos(lista.map((r: any) => ({ valor: r.valor, data: r.data })));
+  };
+
+  // Gerar anos para o select
+  const gerarAnos = () => {
+    const anoAtual = new Date().getFullYear();
+    const anos = [];
+    for (let i = anoAtual - 2; i <= anoAtual + 2; i++) {
+      anos.push(i);
+    }
+    return anos;
   };
 
   const handleSubmit = () => {
     if (isMetaForm) {
-      onAddComissao({ valorComissaoCorretor: metaValor });
+      onAddComissao({ 
+        valorComissaoCorretor: metaValor, 
+        dataVenda: `${anoSelecionado}-${mesSelecionado.toString().padStart(2, '0')}-01`, // Usamos para passar o mês/ano
+        dataContrato: `${mesSelecionado}-${anoSelecionado}` // Usamos para passar o mês/ano em outro formato
+      });
       onOpenChange(false);
       toast({
         title: "Meta atualizada",
-        description: "A meta de comissão foi atualizada com sucesso."
+        description: `A meta de comissão para ${obterNomeMes(mesSelecionado)}/${anoSelecionado} foi atualizada com sucesso.`
       });
       return;
     }
@@ -194,7 +198,7 @@ const ComissaoForm = ({
           </DialogTitle>
           <DialogDescription>
             {isMetaForm 
-              ? "Defina a meta de comissão para o período."
+              ? "Defina a meta de comissão para o mês e ano selecionados."
               : comissaoParaEditar 
                 ? "Atualize os dados da comissão selecionada." 
                 : "Preencha os dados da nova comissão a ser registrada."}
@@ -203,6 +207,44 @@ const ComissaoForm = ({
         
         {isMetaForm ? (
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="selectMes">Mês</Label>
+                <Select 
+                  value={String(mesSelecionado)} 
+                  onValueChange={(value) => setMesSelecionado(parseInt(value))}
+                >
+                  <SelectTrigger id="selectMes" className="w-full">
+                    <SelectValue placeholder="Selecione o mês" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>
+                        {obterNomeMes(i + 1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="selectAno">Ano</Label>
+                <Select 
+                  value={String(anoSelecionado)} 
+                  onValueChange={(value) => setAnoSelecionado(parseInt(value))}
+                >
+                  <SelectTrigger id="selectAno" className="w-full">
+                    <SelectValue placeholder="Selecione o ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gerarAnos().map((ano) => (
+                      <SelectItem key={ano} value={String(ano)}>
+                        {ano}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
               <Label htmlFor="metaValor">Valor da Meta (R$)</Label>
               <Input
@@ -213,6 +255,15 @@ const ComissaoForm = ({
                 onChange={handleInputChange}
                 placeholder="0,00"
               />
+            </div>
+            <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
+              <div className="text-sm text-slate-600 mb-1 flex items-center">
+                <CalendarIcon className="h-4 w-4 mr-1" />
+                <span>Período selecionado</span>
+              </div>
+              <div className="font-medium text-slate-800">
+                {obterNomeMes(mesSelecionado)} de {anoSelecionado}
+              </div>
             </div>
           </div>
         ) : (
