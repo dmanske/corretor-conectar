@@ -2,7 +2,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Comissao, ComissaoStatus, StatusValor, ParcelasPendentes, ComissaoTotais, ComissaoRecebimento } from "@/types/comissao.types";
+import { 
+  Comissao, 
+  ComissaoStatus, 
+  StatusValor, 
+  ParcelasPendentes, 
+  ComissaoTotais, 
+  ComissaoRecebimento 
+} from "@/types/comissao.types";
 import { calcularTotais, filtrarComissoes } from "@/utils/comissao.helpers";
 import { obterNomeMes } from "@/utils/comissao.utils";
 import { exportarComissoesParaCSV } from "@/services/csv.service";
@@ -25,6 +32,9 @@ import {
   atualizarMeta as updateMeta,
   getTotalRecebidoPorMesAno
 } from "@/services/meta.service";
+
+// Export the types that are used by other components
+export type { Comissao, ComissaoStatus, StatusValor };
 
 export const useComissoes = () => {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);

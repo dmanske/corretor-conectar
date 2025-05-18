@@ -1,4 +1,3 @@
-
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { Comissao, ComissaoTotais, PdfExportOptions, ParcelasPendentes } from "@/types/comissao.types";
@@ -115,12 +114,12 @@ export const exportarComissoesParaPDF = (
     comissoesParaExportar.forEach(comissao => {
       const row = [];
 
-      if (incluirCliente) row.push({ text: comissao.cliente || 'N/A', style: 'tableCell' });
-      if (incluirImovel) row.push({ text: comissao.imovel || 'N/A', style: 'tableCell' });
-      if (incluirValorVenda) row.push({ text: formatarMoedaParaPDF(comissao.valorVenda), style: 'tableCell', alignment: 'right' });
-      if (incluirValorComissao) row.push({ text: formatarMoedaParaPDF(comissao.valorComissaoCorretor), style: 'tableCell', alignment: 'right' });
-      if (incluirDataVenda) row.push({ text: formatarDataParaPDF(comissao.dataVenda), style: 'tableCell' });
-      if (incluirDataPagamento) row.push({ text: formatarDataParaPDF(comissao.dataPagamento), style: 'tableCell' });
+      if (incluirCliente) row.push({ text: comissao.cliente || 'N/A', style: 'tableCell', fillColor: colors.headerBg });
+      if (incluirImovel) row.push({ text: comissao.imovel || 'N/A', style: 'tableCell', fillColor: colors.headerBg });
+      if (incluirValorVenda) row.push({ text: formatarMoedaParaPDF(comissao.valorVenda), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg });
+      if (incluirValorComissao) row.push({ text: formatarMoedaParaPDF(comissao.valorComissaoCorretor), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg });
+      if (incluirDataVenda) row.push({ text: formatarDataParaPDF(comissao.dataVenda), style: 'tableCell', fillColor: colors.headerBg });
+      if (incluirDataPagamento) row.push({ text: formatarDataParaPDF(comissao.dataPagamento), style: 'tableCell', fillColor: colors.headerBg });
       
       if (incluirStatus) {
         let statusColor = colors.textLight;
@@ -130,9 +129,9 @@ export const exportarComissoesParaPDF = (
         
         row.push({ 
           text: comissao.status, 
-          style: 'tableCell', 
-          color: statusColor,
-          bold: comissao.status === 'Recebido'
+          style: 'tableCell',
+          fillColor: colors.headerBg,
+          alignment: 'left'
         });
       }
 
@@ -164,13 +163,13 @@ export const exportarComissoesParaPDF = (
         const atrasoColor = parcela.diasEmAtraso > 0 ? colors.danger : colors.text;
         
         parcelsTableBody.push([
-          { text: parcela.cliente, style: 'tableCell' },
-          { text: parcela.imovel, style: 'tableCell' },
-          { text: formatarMoedaParaPDF(parcela.valorTotal), style: 'tableCell', alignment: 'right' },
-          { text: formatarMoedaParaPDF(parcela.valorPago), style: 'tableCell', alignment: 'right' },
-          { text: formatarMoedaParaPDF(parcela.valorPendente), style: 'tableCell', alignment: 'right', color: colors.primary, bold: true },
-          { text: formatarDataParaPDF(parcela.proximoVencimento), style: 'tableCell' },
-          { text: parcela.diasEmAtraso.toString(), style: 'tableCell', alignment: 'right', color: atrasoColor, bold: parcela.diasEmAtraso > 0 }
+          { text: parcela.cliente, style: 'tableCell', fillColor: colors.headerBg },
+          { text: parcela.imovel, style: 'tableCell', fillColor: colors.headerBg },
+          { text: formatarMoedaParaPDF(parcela.valorTotal), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg },
+          { text: formatarMoedaParaPDF(parcela.valorPago), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg },
+          { text: formatarMoedaParaPDF(parcela.valorPendente), style: 'tableCell', alignment: 'right', color: colors.primary, bold: true, fillColor: colors.headerBg },
+          { text: formatarDataParaPDF(parcela.proximoVencimento), style: 'tableCell', fillColor: colors.headerBg },
+          { text: parcela.diasEmAtraso.toString(), style: 'tableCell', alignment: 'right', color: atrasoColor, bold: parcela.diasEmAtraso > 0, fillColor: colors.headerBg }
         ]);
       });
       
