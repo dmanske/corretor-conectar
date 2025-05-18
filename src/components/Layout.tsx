@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { 
-  LayoutDashboard, 
-  Users, 
-  Home,
   Menu,
   ChevronLeft,
   LogOut
@@ -14,14 +11,9 @@ import useAuth from "@/hooks/useAuth";
 
 const Layout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { logout, user } = useAuth();
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
-  };
-
-  const handleLogout = () => {
-    logout();
   };
 
   return (
@@ -43,35 +35,6 @@ const Layout = () => {
           <h1 className="text-xl font-semibold text-slate-800 flex-1">
             Corretor Conecta
           </h1>
-          
-          <div className="flex items-center gap-4">
-            {user?.user_metadata?.avatar_url ? (
-              <div className="flex items-center gap-2">
-                <img
-                  src={user.user_metadata.avatar_url}
-                  alt="Foto do usuário"
-                  className="w-9 h-9 rounded-full border border-slate-300 object-cover"
-                />
-                <span className="text-sm text-slate-700 font-medium">{user?.user_metadata?.name || user?.email || "Usuário"}</span>
-              </div>
-            ) : (
-              <div className="text-sm text-slate-600">
-                Olá, {user?.user_metadata?.name || user?.email || "Usuário"}
-              </div>
-            )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => {
-                logout();
-                const button = document.activeElement as HTMLButtonElement;
-                if (button) button.disabled = true;
-              }}
-              title="Sair"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
         </header>
         
         {/* Main content */}

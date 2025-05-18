@@ -5,15 +5,19 @@ import {
   Users, 
   Home,
   Calendar,
-  Settings,
-  CircleDollarSign
+  CircleDollarSign,
+  LogOut
 } from "lucide-react";
+import useAuth from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   collapsed: boolean;
 }
 
 const Sidebar = ({ collapsed }: SidebarProps) => {
+  const { user, logout } = useAuth();
+
   const navItems = [
     {
       title: "Dashboard",
@@ -42,17 +46,23 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
     }
   ];
 
+  const handleLogout = () => {
+    logout();
+    const button = document.activeElement as HTMLButtonElement;
+    if (button) button.disabled = true;
+  };
+
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 z-20 h-screen bg-white border-r border-slate-200 transition-all duration-300",
+        "fixed left-0 top-0 z-20 h-screen bg-white border-r border-slate-200 transition-all duration-300 flex flex-col",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Logo */}
       <div className={cn(
-        "h-16 flex items-center border-b border-slate-200 transition-all duration-300",
-        collapsed ? "justify-center px-2" : "px-6"
+        "h-16 flex items-center border-b border-slate-200 transition-all duration-300 shrink-0",
+        collapsed ? "justify-center px-2" : "justify-center px-6"
       )}>
         {collapsed ? (
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
@@ -69,7 +79,7 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
       </div>
 
       {/* Navigation */}
-      <nav className="mt-6 px-2">
+      <nav className="mt-6 px-2 flex-grow">
         <ul className="space-y-1">
           {navItems.map((item) => (
             <li key={item.path}>
@@ -94,28 +104,50 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
         </ul>
       </nav>
       
-      {/* Configurações no rodapé da sidebar */}
+      {/* Informações do Usuário e Logout no rodapé */}
       <div className={cn(
-        "absolute bottom-6 w-full px-2",
-        collapsed ? "" : ""
+        "mt-auto p-2 border-t border-slate-200 shrink-0",
+        collapsed ? "py-3" : "py-3 px-3"
       )}>
-        <NavLink
-          to="/configuracoes"
-          className={({ isActive }) =>
-            cn(
-              "flex items-center rounded-lg px-3 py-2.5 font-medium transition-all duration-200",
-              isActive 
-                ? "bg-blue-50 text-blue-700" 
-                : "text-slate-700 hover:bg-blue-50 hover:text-blue-600",
-              collapsed ? "justify-center" : ""
-            )
-          }
-        >
-          <span className={cn(collapsed ? "mx-auto" : "mr-3")}>
-            <Settings className="h-5 w-5" />
-          </span>
-          {!collapsed && <span>Configurações</span>}
-        </NavLink>
+        {collapsed ? (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleLogout}
+            title="Sair"
+            className="w-full flex justify-center"
+          >
+            <LogOut className="h-5 w-5 text-slate-700" />
+          </Button>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 overflow-hidden">
+              {user?.user_metadata?.avatar_url ? (
+                <img
+                  src={user.user_metadata.avatar_url}
+                  alt="Foto do usuário"
+                  className="w-8 h-8 rounded-full border border-slate-300 object-cover shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shrink-0">
+                  <Users className="h-5 w-5" /> 
+                </div>
+              )}
+              <span className="text-sm text-slate-700 font-medium truncate">
+                {user?.user_metadata?.name || user?.email || "Usuário"}
+              </span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              title="Sair"
+              className="shrink-0"
+            >
+              <LogOut className="h-5 w-5 text-slate-700" />
+            </Button>
+          </div>
+        )}
       </div>
     </aside>
   );
