@@ -5,6 +5,7 @@ import AuthContainer from "@/components/auth/AuthContainer";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import { useAuth } from "@/hooks/useAuth";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Auth = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -32,8 +33,14 @@ const Auth = () => {
       title="Sistema de Gestão Imobiliária"
       description="Faça login ou cadastre-se para acessar o sistema"
     >
-      <LoginForm />
-      <RegisterForm />
+      <Tabs defaultValue="login" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsTrigger value="register">Cadastro</TabsTrigger>
+        </TabsList>
+        <LoginForm />
+        <RegisterForm />
+      </Tabs>
     </AuthContainer>
   );
 };

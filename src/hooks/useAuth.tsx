@@ -5,16 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Session, User } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
 
-const supabaseUrl = 'https://dazmyjjanixtjiyiixqu.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhem15amphbml4dGppeWlpeHF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyMjI0NzAsImV4cCI6MjA2Mjc5ODQ3MH0.0ET70vWucSDbTsPai3fWZQiYDc625SzWxFySNKIZnZI';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+// Using the client from our integrations for consistency
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType {
   user: User | null;
@@ -39,16 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     console.log("Auth provider montado");
     
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Sessão atual:", currentSession ? "Autenticado" : "Não autenticado");
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setIsAuthenticated(!!currentSession);
-      setIsLoading(false);
-    });
-
-    // Configurar listener para mudanças de estado de autenticação
+    // Set up listener for auth state changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Evento de autenticação:", event);
@@ -69,6 +52,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Sessão atual:", currentSession ? "Autenticado" : "Não autenticado");
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsAuthenticated(!!currentSession);
+      setIsLoading(false);
+      
+      if (currentSession && window.location.pathname === "/auth") {
+        navigate("/");
+      }
+    });
 
     // Limpar subscription ao desmontar
     return () => {
@@ -146,10 +142,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithGoogle = async () => {
     try {
+      // Fix the redirectTo URL to be absolute
+      const origin = window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${origin}/auth`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
