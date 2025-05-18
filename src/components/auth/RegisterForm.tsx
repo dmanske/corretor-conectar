@@ -55,6 +55,13 @@ const RegisterForm = () => {
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
+  
+  const switchToLogin = () => {
+    const loginTab = document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="login"]');
+    if (loginTab instanceof HTMLElement) {
+      loginTab.click();
+    }
+  };
 
   return (
     <div>
@@ -188,7 +195,7 @@ const RegisterForm = () => {
           <button
             type="button"
             className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-            onClick={() => document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="login"]')?.click()}
+            onClick={switchToLogin}
           >
             Faça login
           </button>

@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useAuth } from "@/hooks/useAuth";
 import { FcGoogle } from "react-icons/fc";
 import { Loader2, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import ForgotPasswordForm from "./ForgotPasswordForm";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -22,6 +23,7 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -55,6 +57,13 @@ const LoginForm = () => {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const switchToRegister = () => {
+    const registerTab = document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="register"]');
+    if (registerTab instanceof HTMLElement) {
+      registerTab.click();
+    }
   };
 
   return (
@@ -124,6 +133,7 @@ const LoginForm = () => {
             <button
               type="button"
               className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+              onClick={() => setShowForgotPassword(true)}
             >
               Esqueceu a senha?
             </button>
@@ -179,12 +189,16 @@ const LoginForm = () => {
           <button
             type="button"
             className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-            onClick={() => document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="register"]')?.click()}
+            onClick={switchToRegister}
           >
             Cadastre-se
           </button>
         </p>
       </div>
+      
+      {showForgotPassword && (
+        <ForgotPasswordForm onCancel={() => setShowForgotPassword(false)} />
+      )}
     </div>
   );
 };

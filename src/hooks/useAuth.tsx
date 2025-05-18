@@ -16,6 +16,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isLoading: boolean;
   loginWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -150,6 +151,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/#/reset-password`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Link de recuperação enviado",
+        description: "Verifique seu email para redefinir sua senha.",
+      });
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      toast({
+        title: "Erro ao enviar link de recuperação",
+        description: error.message || "Não foi possível enviar o link de recuperação. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -209,7 +234,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       register, 
       logout, 
       isLoading, 
-      loginWithGoogle 
+      loginWithGoogle,
+      resetPassword
     }}>
       {children}
     </AuthContext.Provider>
