@@ -11,6 +11,7 @@ import { useComissoes, Comissao } from "@/hooks/useComissoes";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { CalendarIcon } from "lucide-react";
+import { useVendas } from "@/hooks/useVendas";
 
 interface ComissaoFormProps {
   open: boolean;
@@ -32,6 +33,7 @@ const ComissaoForm = ({
   const { toast } = useToast();
   const { clientes } = useClientes();
   const { getRecebimentosByComissaoId, adicionarRecebimento, obterNomeMes } = useComissoes();
+  const { vendas, getVendaById } = useVendas();
   
   const [novaComissao, setNovaComissao] = useState<Partial<Comissao>>({
     cliente: "",
@@ -68,6 +70,17 @@ const ComissaoForm = ({
       if (clienteEncontrado) {
         setClienteSelecionadoId(clienteEncontrado.id);
       }
+      // Preencher valores de comissão a partir da venda, se existir e se os campos estiverem zerados
+      if (comissaoParaEditar.vendaId) {
+        const venda = getVendaById(comissaoParaEditar.vendaId);
+        if (venda) {
+          setNovaComissao(prev => ({
+            ...prev,
+            valorComissaoImobiliaria: prev.valorComissaoImobiliaria && prev.valorComissaoImobiliaria > 0 ? prev.valorComissaoImobiliaria : venda.comissao_imobiliaria || 0,
+            valorComissaoCorretor: prev.valorComissaoCorretor && prev.valorComissaoCorretor > 0 ? prev.valorComissaoCorretor : venda.comissao_corretor || 0,
+          }));
+        }
+      }
     }
 
     if (comissaoParaEditar && comissaoParaEditar.id) {
@@ -75,7 +88,7 @@ const ComissaoForm = ({
         setRecebimentos(recebimentosDb.map((r: any) => ({ valor: r.valor, data: r.data })));
       });
     }
-  }, [isMetaForm, currentMeta, comissaoParaEditar, clientes]);
+  }, [isMetaForm, currentMeta, comissaoParaEditar, clientes, vendas]);
   
   const handleClienteChange = (clienteId: string) => {
     setClienteSelecionadoId(clienteId);

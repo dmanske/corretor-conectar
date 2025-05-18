@@ -11,7 +11,7 @@ export const useVendas = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { adicionarComissao } = useComissoes();
+  const { adicionarComissao, atualizarComissao, getComissoesByVendaId } = useComissoes();
 
   // Fetch vendas
   useEffect(() => {
@@ -203,6 +203,16 @@ export const useVendas = () => {
         description: "Os dados da venda foram atualizados.",
         variant: "success"
       });
+
+      // Atualizar as comissões relacionadas a essa venda
+      const comissoesRelacionadas = getComissoesByVendaId(id);
+      for (const comissao of comissoesRelacionadas) {
+        await atualizarComissao(comissao.id, {
+          ...(vendaAtualizada.comissao_imobiliaria !== undefined && { valorComissaoImobiliaria: vendaAtualizada.comissao_imobiliaria }),
+          ...(vendaAtualizada.comissao_corretor !== undefined && { valorComissaoCorretor: vendaAtualizada.comissao_corretor })
+        });
+      }
+
       return true;
     } catch (error) {
       console.error("Erro ao atualizar venda:", error);

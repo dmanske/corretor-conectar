@@ -148,14 +148,17 @@ const Vendas = () => {
               <Building className="w-6 h-6" />
               <span className="text-lg font-semibold">Tipos de Imóvel</span>
             </div>
-            <ul className="text-base space-y-1">
-              {Object.entries(tiposImovel).map(([tipo, count]) => (
-                <li key={tipo} className="flex items-center gap-2">
-                  <span className="inline-block bg-white/20 text-white rounded px-2 py-0.5 text-xs font-medium border border-white/30">{tipo}</span>
-                  <span className="text-white font-bold">{count}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="flex flex-wrap justify-center gap-2">
+              {Object.entries(tiposImovel)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5)
+                .map(([tipo, count]) => (
+                  <div key={tipo} className="flex items-center gap-1 bg-white/20 rounded px-2 py-1 text-sm border border-white/30">
+                    <span>{tipo}</span>
+                    <span className="font-bold">{count}</span>
+                  </div>
+                ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -172,9 +175,11 @@ const Vendas = () => {
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="text-left py-2 px-4 border-b">Data</th>
-                    <th className="text-left py-2 px-4 border-b">Cliente</th>
-                    <th className="text-left py-2 px-4 border-b">Imóvel</th>
-                    <th className="text-left py-2 px-4 border-b">Valor</th>
+                    <th className="text-center py-2 px-4 border-b">Cliente</th>
+                    <th className="text-center py-2 px-4 border-b">Imóvel</th>
+                    <th className="text-center py-2 px-4 border-b">Valor</th>
+                    <th className="text-center py-2 px-4 border-b">Comissão Imobiliária</th>
+                    <th className="text-center py-2 px-4 border-b">Comissão do Corretor</th>
                     <th className="text-left py-2 px-4 border-b">Tipo</th>
                   </tr>
                 </thead>
@@ -182,9 +187,11 @@ const Vendas = () => {
                   {vendasFiltradas.map(venda => (
                     <tr key={venda.id} className="hover:bg-slate-50">
                       <td className="py-2 px-4 border-b">{formatarData(venda.dataVenda)}</td>
-                      <td className="py-2 px-4 border-b">{venda.clienteNome}</td>
-                      <td className="py-2 px-4 border-b">{venda.endereco}</td>
-                      <td className="py-2 px-4 border-b text-blue-600 font-semibold">{formatarMoeda(venda.valor)}</td>
+                      <td className="py-2 px-4 border-b text-center">{venda.clienteNome}</td>
+                      <td className="py-2 px-4 border-b text-center">{venda.endereco}</td>
+                      <td className="py-2 px-4 border-b text-blue-600 font-semibold text-center">{formatarMoeda(venda.valor)}</td>
+                      <td className="py-2 px-4 border-b text-center">{formatarMoeda(venda.comissao_imobiliaria || 0)}</td>
+                      <td className="py-2 px-4 border-b text-center">{formatarMoeda(venda.comissao_corretor || 0)}</td>
                       <td className="py-2 px-4 border-b">
                         <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">{venda.tipoImovel}</span>
                       </td>

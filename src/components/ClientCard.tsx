@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Modal } from "@/components/ui/modal";
+import { Badge } from '@/components/ui/badge';
 
 interface Sale {
   id: string;
@@ -131,6 +132,34 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 
   const lastSale = sales.length > 0 ? sales.reduce((a, b) => (a.date > b.date ? a : b)) : null;
 
+  // Lógica para verificar se hoje é aniversário
+  let dataNascimentoObj;
+  if (typeof birthday === 'string' && birthday.includes('-')) {
+    const partes = birthday.split('-');
+    if (partes.length === 3) {
+      dataNascimentoObj = new Date(Date.UTC(
+        parseInt(partes[0]),
+        parseInt(partes[1]) - 1,
+        parseInt(partes[2])
+      ));
+    }
+  } else if (typeof birthday === 'string' && birthday.includes('/')) {
+    const partes = birthday.split('/');
+    if (partes.length === 3) {
+      dataNascimentoObj = new Date(Date.UTC(
+        parseInt(partes[2]),
+        parseInt(partes[1]) - 1,
+        parseInt(partes[0])
+      ));
+    }
+  } else if (birthday instanceof Date) {
+    dataNascimentoObj = birthday;
+  }
+  const hoje = new Date();
+  const aniversarioHoje = dataNascimentoObj &&
+    dataNascimentoObj.getUTCDate() === hoje.getUTCDate() &&
+    dataNascimentoObj.getUTCMonth() === hoje.getUTCMonth();
+
   const handleViewSale = (saleId: string) => {
     const venda = sales.find(v => v.id === saleId);
     if (venda) {
@@ -165,6 +194,11 @@ export const ClientCard: React.FC<ClientCardProps> = ({
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-base text-[#1a1a1a] truncate">{name}</span>
+              {aniversarioHoje && (
+                <Badge variant="destructive" className="bg-pink-500 text-white text-xs px-2 py-1 ml-2">
+                  🎉 Hoje
+                </Badge>
+              )}
               {isPremium && (
                 <span className="contact-item badge badge-premium bg-[#fff7ed] text-[#c2410c] border border-[#ffedd5] rounded-full px-2 py-1 text-xs font-medium">Premium</span>
               )}
@@ -217,7 +251,14 @@ export const ClientCard: React.FC<ClientCardProps> = ({
               {avatar ? <img src={avatar} alt={name} className="w-full h-full rounded-full object-cover" /> : getInitials(name)}
             </div>
             <div className="client-name-container flex flex-col">
-              <div className="client-name text-[18px] font-semibold text-[#1a1a1a] mb-1">{name}</div>
+              <div className="client-name text-[18px] font-semibold text-[#1a1a1a] mb-1 flex items-center gap-2">
+                {name}
+                {aniversarioHoje && (
+                  <Badge variant="destructive" className="bg-pink-500 text-white text-xs px-2 py-1 ml-2">
+                    🎉 Hoje
+                  </Badge>
+                )}
+              </div>
               <div className="client-since flex items-center gap-1 text-xs text-[#6b7280] font-medium">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
