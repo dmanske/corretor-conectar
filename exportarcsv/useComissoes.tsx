@@ -272,6 +272,17 @@ export const useComissoes = () => {
 
     let csvContent = "data:text/csv;charset=utf-8,";
     
+    // Função para escapar campos CSV
+    function escapeCSV(value: any) {
+      if (value === null || value === undefined) return '';
+      let str = String(value);
+      if (str.includes('"')) str = str.replace(/"/g, '""');
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        str = '"' + str + '"';
+      }
+      return str;
+    }
+
     // Cabeçalho
     const header = [
       incluirCliente ? "Cliente" : null,
@@ -281,25 +292,31 @@ export const useComissoes = () => {
       incluirDataVenda ? "Data da Venda" : null,
       incluirDataPagamento ? "Data de Pagamento" : null,
       incluirStatus ? "Status" : null,
-    ].filter(Boolean).join(",");
+    ].filter(v => v !== null && v !== undefined).join(",");
     
     csvContent += header + "\r\n";
 
     // Conteúdo das linhas
     comissoesParaExportar.forEach(comissao => {
       const row = [
-        incluirCliente ? comissao.cliente : null,
-        incluirImovel ? comissao.imovel : null,
-        incluirValorVenda ? comissao.valorVenda : null,
-        incluirValorComissao ? comissao.valorComissaoCorretor : null,
-        incluirDataVenda ? comissao.dataVenda : null,
-        incluirDataPagamento ? comissao.dataPagamento : null,
-        incluirStatus ? comissao.status : null,
-      ].filter(Boolean).join(",");
+        incluirCliente ? escapeCSV(comissao.cliente) : null,
+        incluirImovel ? escapeCSV(comissao.imovel) : null,
+        incluirValorVenda ? escapeCSV(comissao.valorVenda) : null,
+        incluirValorComissao ? escapeCSV(comissao.valorComissaoCorretor) : null,
+        incluirDataVenda ? escapeCSV(comissao.dataVenda) : null,
+        incluirDataPagamento ? escapeCSV(comissao.dataPagamento) : null,
+        incluirStatus ? escapeCSV(comissao.status) : null,
+      ].filter(v => v !== null && v !== undefined).join(",");
       
       csvContent += row + "\r\n";
     });
 
+    // Toast bonito do sistema
+    toast({
+      title: "Exportação iniciada",
+      description: "O download do arquivo CSV está sendo gerado.",
+      variant: "success"
+    });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -349,7 +366,7 @@ export const useComissoes = () => {
           ano: ano,
           valor: valor,
           user_id: user.id
-        }, { onConflict: ['mes', 'ano', 'user_id'] });
+        }, { onConflict: 'mes,ano,user_id' });
 
       if (error) {
         throw error;
@@ -616,35 +633,6 @@ export const useComissoes = () => {
     };
   }, [comissoes, metaComissao]);
 
-  // Função para buscar e somar recebimentos de um mês/ano
-  const getTotalRecebidoPorMesAno = async (mes: number, ano: number) => {
-    try {
-      const inicioAno = `${ano}-01-01`;
-      const fimAno = `${ano}-12-31`;
-      const { data, error } = await supabase
-        .from('comissao_recebimentos')
-        .select('valor, data')
-        .gte('data', inicioAno)
-        .lte('data', fimAno);
-      if (error) {
-        console.error('Erro ao buscar recebimentos do ano:', error);
-        return 0;
-      }
-      // Filtra pelo mês e ano exatos usando split da string
-      return (data || []).reduce((acc, r) => {
-        if (!r.data) return acc;
-        const [yyyy, mm] = r.data.split('-');
-        if (parseInt(yyyy) === ano && parseInt(mm) === mes) {
-          return acc + (r.valor || 0);
-        }
-        return acc;
-      }, 0);
-    } catch (err) {
-      console.error('Erro ao buscar recebimentos do mês:', err);
-      return 0;
-    }
-  };
-
   return {
     comissoes,
     metaComissao,
@@ -663,7 +651,9 @@ export const useComissoes = () => {
     getRecebimentosByComissaoId,
     adicionarRecebimento,
     calcularTotais,
-    getTotalRecebidoPorMesAno,
+    exportarParaCSV,
+    exportarParaPDF,
+    getMetaMensal
   };
 };
 

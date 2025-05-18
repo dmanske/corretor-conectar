@@ -40,12 +40,9 @@ const Comissoes = () => {
   const [comissaoParaEditar, setComissaoParaEditar] = useState<Comissao | null>(null);
   const [mesSelecionado, setMesSelecionado] = useState<number | null>(null);
   
-  // Estados para as métricas 
-  const [totaisRecebimentos, setTotaisRecebimentos] = useState({
-    totalRecebido: 0,
-    totalPendente: 0,
-    atingidoPercentual: 0
-  });
+  // Novo estado para os cards
+  const [totalRecebido, setTotalRecebido] = useState(0);
+  const [atingidoPercentual, setAtingidoPercentual] = useState(0);
   
   const { 
     comissoes, 
@@ -63,19 +60,16 @@ const Comissoes = () => {
     alterarPeriodoAtual,
     obterNomeMes,
     getRecebimentosByComissaoId,
-    adicionarRecebimento,
-    calcularTotais,
-    getTotalRecebidoPorMesAno,
+    getMetaMensal
   } = useComissoes();
 
   // Filtrar comissões
   const comissoesFiltradas = filtrarComissoes("todas", filtro, periodo);
 
-  // Filtra as comissões do mês selecionado (por data_venda, para o usuário logado)
+  // Filtra as comissões do mês selecionado
   const comissoesDoMes = useMemo(() => {
     if (mesSelecionado === null) return comissoesFiltradas;
     return comissoesFiltradas.filter(c => {
-      if (!c.dataVenda) return false;
       const data = new Date(c.dataVenda);
       return data.getFullYear() === anoAtual && data.getMonth() === mesSelecionado;
     });
@@ -83,10 +77,6 @@ const Comissoes = () => {
 
   // Se um mês está selecionado, use apenas as comissões desse mês para os cards
   const comissoesParaResumo = mesSelecionado !== null ? comissoesDoMes : comissoesFiltradas;
-
-  // Cálculo do total de vendas e quantidade para o card
-  const totalVendas = comissoesParaResumo.reduce((acc, c) => acc + (c.valorVenda || 0), 0);
-  const totalVendasCount = comissoesParaResumo.length;
 
   // Filtrar a tabela com base nas comissoesParaResumo e na aba selecionada
   const comissoesExibidas = useMemo(() => {
@@ -124,57 +114,19 @@ const Comissoes = () => {
     return [];
   }, [comissoesParaResumo, tab]);
 
-  // Calcular recebimentos para os cards e classificar comissões
+  // Novo cálculo dos cards baseado nos recebimentos reais
   useEffect(() => {
-    async function calcularTotaisRecebimentos() {
-      let totalRecebido = 0;
-      if (mesSelecionado !== null) {
-        totalRecebido = await getTotalRecebidoPorMesAno(mesSelecionado + 1, anoAtual);
-      } else {
-        let soma = 0;
-        for (let mes = 1; mes <= 12; mes++) {
-          soma += await getTotalRecebidoPorMesAno(mes, anoAtual);
-        }
-        totalRecebido = soma;
+    async function calcularRecebimentosReais() {
+      let somaRecebido = 0;
+      for (const c of comissoesParaResumo) {
+        const recebimentos = await getRecebimentosByComissaoId(c.id);
+        somaRecebido += recebimentos.reduce((acc, r) => acc + (r.valor || 0), 0);
       }
-
-      // Novo cálculo do total pendente considerando apenas recebimentos do mês selecionado
-      let totalPendente = 0;
-      const pendentesOuParciais = comissoesParaResumo.filter(c => {
-        const status = c.status?.toLowerCase();
-        return status === "pendente" || status === "parcial";
-      });
-
-      for (const comissao of pendentesOuParciais) {
-        const recebimentos = await getRecebimentosByComissaoId(comissao.id);
-        let totalRecebidoNoMes = 0;
-        if (mesSelecionado !== null) {
-          // Filtra recebimentos do mês/ano selecionado
-          const recebimentosDoMes = recebimentos.filter(r => {
-            if (!r.data) return false;
-            const [yyyy, mm] = r.data.split('-');
-            return parseInt(yyyy) === anoAtual && parseInt(mm) === (mesSelecionado + 1);
-          });
-          totalRecebidoNoMes = recebimentosDoMes.reduce((acc, r) => acc + Number(r.valor || 0), 0);
-        } else {
-          // Todos os meses: soma todos os recebimentos
-          totalRecebidoNoMes = recebimentos.reduce((acc, r) => acc + Number(r.valor || 0), 0);
-        }
-        totalPendente += Math.max((comissao.valorComissaoCorretor || 0) - totalRecebidoNoMes, 0);
-      }
-
-      // Cálculo do total de vendas para o percentual atingido
-      const totalVendas = comissoesParaResumo.reduce((acc, c) => acc + (c.valorVenda || 0), 0);
-      const atingidoPercentual = metaComissao > 0 ? (totalVendas / metaComissao) * 100 : 0;
-      setTotaisRecebimentos({
-        totalRecebido,
-        totalPendente,
-        atingidoPercentual
-      });
+      setTotalRecebido(somaRecebido);
+      setAtingidoPercentual(metaComissao > 0 ? (somaRecebido / metaComissao) * 100 : 0);
     }
-    calcularTotaisRecebimentos();
-    // eslint-disable-next-line
-  }, [comissoesParaResumo, metaComissao, mesSelecionado, anoAtual]);
+    calcularRecebimentosReais();
+  }, [comissoesParaResumo, metaComissao, getRecebimentosByComissaoId]);
 
   // Identifica os meses que têm comissão no ano atual
   const mesesComComissao = useMemo(() => {
@@ -204,13 +156,6 @@ const Comissoes = () => {
       return d1.localeCompare(d2);
     });
   }, [comissoesDoMes]);
-
-  // Atualiza o período atual quando o mês selecionado muda
-  useEffect(() => {
-    if (mesSelecionado !== null) {
-      alterarPeriodoAtual(mesSelecionado + 1, anoAtual);
-    }
-  }, [mesSelecionado, anoAtual, alterarPeriodoAtual]);
 
   const handleExportarRelatorio = () => {
     setExportDialogOpen(true);
@@ -345,54 +290,26 @@ const Comissoes = () => {
         </div>
       </div>
 
-      {/* Meta atual */}
-      <Card className="border-2 border-slate-200">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h3 className="text-lg font-medium">Meta de venda de {obterNomeMes(mesAtual)} de {anoAtual}</h3>
-              <p className="text-slate-600">
-                {metaComissao ? 
-                  `Meta definida: ${metaComissao.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}` : 
-                  'Nenhuma meta de venda definida para este mês'
-                }
-              </p>
+      {/* Substituir os cards antigos por novos cards simples e modernos */}
+      <div className="grid gap-4 md:grid-cols-5">
+        <Card>
+          <CardContent>
+            <div className="text-sm text-slate-500 mb-1">Comissões Recebidas</div>
+            <div className="text-2xl font-bold text-green-600 mb-1">
+              {totalRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="text-right">
-                <div className="text-sm text-slate-500">Progresso</div>
-                <div className="font-bold text-lg">{totaisRecebimentos.atingidoPercentual.toFixed(1)}%</div>
-              </div>
-              
-              <div className="w-32 h-4 bg-slate-200 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full ${totaisRecebimentos.atingidoPercentual >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                  style={{ width: `${Math.min(totaisRecebimentos.atingidoPercentual, 100)}%` }}
-                ></div>
-              </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <div className="text-sm text-slate-500 mb-1">Atingido</div>
+            <div className="text-2xl font-bold text-purple-600 mb-1">
+              {atingidoPercentual.toFixed(1)}%
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards de resumo */}
-      <ComissoesSummary 
-        totalComissoes={comissoesParaResumo.reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0)}
-        totalCount={comissoesParaResumo.length}
-        totalRecebido={totaisRecebimentos.totalRecebido}
-        recebidoCount={comissoesParaResumo.filter(c => c.status?.toLowerCase() === "recebido").length}
-        totalPendente={totaisRecebimentos.totalPendente}
-        pendenteCount={comissoesParaResumo.filter(c => {
-          const status = c.status?.toLowerCase();
-          return status === "pendente" || status === "parcial";
-        }).length}
-        metaComissao={metaComissao}
-        atingidoPercentual={totaisRecebimentos.atingidoPercentual}
-        labelMeta="Meta de venda"
-        totalVendas={totalVendas}
-        totalVendasCount={totalVendasCount}
-      />
+            <div className="text-xs text-muted-foreground">Da meta atual</div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Filtros e tabela */}
       <Tabs defaultValue="todas" value={tab}>
