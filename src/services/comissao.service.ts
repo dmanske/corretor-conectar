@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Comissao, ComissaoStatus } from "@/types/comissao.types";
+import { Comissao, ComissaoStatus, StatusValor, ComissaoRecebimento, ParcelasPendentes } from "@/types/comissao.types";
 import { useToast } from "@/hooks/use-toast";
 
 export const fetchComissoes = async (userId: string | undefined) => {
@@ -35,7 +34,7 @@ export const fetchComissoes = async (userId: string | undefined) => {
       valorOriginalVenda: comissao.valor_original_venda,
       valorAtualVenda: comissao.valor_atual_venda,
       diferencaValor: comissao.diferenca_valor,
-      statusValor: comissao.status_valor,
+      statusValor: comissao.status_valor as StatusValor,
       justificativa: comissao.justificativa,
       createdAt: comissao.created_at,
       updatedAt: comissao.updated_at,
@@ -67,7 +66,7 @@ export const adicionarComissao = async (
         data_venda: comissao.dataVenda,
         data_pagamento: comissao.dataPagamento,
         status: comissao.status,
-        status_valor: comissao.statusValor || "Atualizado",
+        status_valor: comissao.statusValor || "Atualizado" as StatusValor,
         user_id: userId,
       })
       .select();
@@ -92,7 +91,7 @@ export const adicionarComissao = async (
         valorOriginalVenda: data[0].valor_original_venda,
         valorAtualVenda: data[0].valor_atual_venda,
         diferencaValor: data[0].diferenca_valor,
-        statusValor: data[0].status_valor,
+        statusValor: data[0].status_valor as StatusValor,
         justificativa: data[0].justificativa,
         createdAt: data[0].created_at,
         updatedAt: data[0].updated_at,
@@ -221,7 +220,7 @@ export const excluirComissao = async (
   }
 };
 
-export const getRecebimentosByComissaoId = async (comissaoId: string) => {
+export const getRecebimentosByComissaoId = async (comissaoId: string): Promise<ComissaoRecebimento[]> => {
   try {
     const { data, error } = await supabase
       .from('comissao_recebimentos')
@@ -234,7 +233,12 @@ export const getRecebimentosByComissaoId = async (comissaoId: string) => {
       return [];
     }
 
-    return data || [];
+    return (data || []).map(item => ({
+      id: item.id,
+      comissao_id: item.comissao_id,
+      valor: item.valor,
+      data: item.data
+    }));
   } catch (error) {
     console.error("Erro ao buscar recebimentos:", error);
     return [];
@@ -273,5 +277,83 @@ export const adicionarRecebimento = async (
       description: "Não foi possível adicionar o recebimento.",
     });
     return false;
+  }
+};
+
+export const getParcelasPendentes = async (userId: string | undefined): Promise<ParcelasPendentes[]> => {
+  if (!userId) return [];
+  
+  try {
+    // Busca comissões pendentes ou parciais
+    const { data: comissoes, error: comissoesError } = await supabase
+      .from("comissoes")
+      .select("*")
+      .in("status", ["Pendente", "Parcial"])
+      .order('data_venda', { ascending: false });
+    
+    if (comissoesError) throw comissoesError;
+    if (!comissoes || comissoes.length === 0) return [];
+    
+    // Lista de parcelas pendentes
+    const parcelas: ParcelasPendentes[] = [];
+    
+    // Para cada comissão, busca recebimentos e calcula valores pendentes
+    for (const comissao of comissoes) {
+      const { data: recebimentos, error: recebimentosError } = await supabase
+        .from('comissao_recebimentos')
+        .select('*')
+        .eq('comissao_id', comissao.id)
+        .order('data', { ascending: false });
+      
+      if (recebimentosError) {
+        console.error("Erro ao buscar recebimentos:", recebimentosError);
+        continue;
+      }
+      
+      const valorTotal = comissao.valor_comissao_corretor || 0;
+      const valorPago = (recebimentos || []).reduce((total, item) => total + (item.valor || 0), 0);
+      const valorPendente = valorTotal - valorPago;
+      
+      // Se há valor pendente, adiciona à lista
+      if (valorPendente > 0) {
+        // Calcula próximo vencimento (simulado: 30 dias após a venda ou último pagamento)
+        const ultimoPagamento = recebimentos && recebimentos.length > 0 
+          ? recebimentos[0].data 
+          : null;
+        
+        // Calcula próximo vencimento (30 dias após a venda ou último pagamento)
+        const baseDate = ultimoPagamento || comissao.data_venda;
+        const proximoVencimento = baseDate ? 
+          new Date(new Date(baseDate).setDate(new Date(baseDate).getDate() + 30)).toISOString().split('T')[0] : null;
+        
+        // Calcula dias em atraso
+        let diasEmAtraso = 0;
+        if (proximoVencimento) {
+          const hoje = new Date();
+          const dataVencimento = new Date(proximoVencimento);
+          if (hoje > dataVencimento) {
+            diasEmAtraso = Math.floor((hoje.getTime() - dataVencimento.getTime()) / (1000 * 60 * 60 * 24));
+          }
+        }
+        
+        parcelas.push({
+          comissaoId: comissao.id,
+          cliente: comissao.cliente,
+          imovel: comissao.imovel,
+          valorTotal,
+          valorPago,
+          valorPendente,
+          dataVenda: comissao.data_venda,
+          dataUltimoPagamento: ultimoPagamento,
+          proximoVencimento,
+          diasEmAtraso
+        });
+      }
+    }
+    
+    return parcelas;
+  } catch (error) {
+    console.error("Erro ao buscar parcelas pendentes:", error);
+    return [];
   }
 };

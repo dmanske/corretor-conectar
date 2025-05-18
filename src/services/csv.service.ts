@@ -1,17 +1,7 @@
 
-import { Comissao } from "../types/comissao.types";
-import { escapeCSV } from "../utils/comissao.utils";
+import { Comissao, CsvExportOptions } from "@/types/comissao.types";
+import { escapeCSV, formatarDataParaPDF, formatarMoedaParaPDF } from "@/utils/comissao.utils";
 import { useToast } from "@/hooks/use-toast";
-
-interface CsvExportOptions {
-  incluirCliente?: boolean;
-  incluirImovel?: boolean;
-  incluirValorVenda?: boolean;
-  incluirValorComissao?: boolean;
-  incluirDataVenda?: boolean;
-  incluirDataPagamento?: boolean;
-  incluirStatus?: boolean;
-}
 
 export const exportarComissoesParaCSV = (
   comissoesParaExportar: Comissao[],
@@ -48,10 +38,10 @@ export const exportarComissoesParaCSV = (
     const row = [
       incluirCliente ? escapeCSV(comissao.cliente) : null,
       incluirImovel ? escapeCSV(comissao.imovel) : null,
-      incluirValorVenda ? escapeCSV(comissao.valorVenda) : null,
-      incluirValorComissao ? escapeCSV(comissao.valorComissaoCorretor) : null,
-      incluirDataVenda ? escapeCSV(comissao.dataVenda) : null,
-      incluirDataPagamento ? escapeCSV(comissao.dataPagamento) : null,
+      incluirValorVenda ? escapeCSV(formatarMoedaParaPDF(comissao.valorVenda)) : null,
+      incluirValorComissao ? escapeCSV(formatarMoedaParaPDF(comissao.valorComissaoCorretor)) : null,
+      incluirDataVenda ? escapeCSV(formatarDataParaPDF(comissao.dataVenda)) : null,
+      incluirDataPagamento ? escapeCSV(formatarDataParaPDF(comissao.dataPagamento)) : null,
       incluirStatus ? escapeCSV(comissao.status) : null,
     ].filter(v => v !== null && v !== undefined).join(",");
     

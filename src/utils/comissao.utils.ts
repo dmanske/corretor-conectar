@@ -45,3 +45,66 @@ export const escapeCSV = (value: any): string => {
   }
   return str;
 };
+
+/**
+ * Calcula dias entre duas datas
+ */
+export const calcularDiasEntreDatas = (data1: string | null, data2: string | null): number => {
+  if (!data1 || !data2) return 0;
+  
+  try {
+    const d1 = new Date(data1);
+    const d2 = new Date(data2);
+    const diffTime = Math.abs(d2.getTime() - d1.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Calcula dias em atraso
+ */
+export const calcularDiasEmAtraso = (dataVencimento: string | null): number => {
+  if (!dataVencimento) return 0;
+  
+  try {
+    const hoje = new Date();
+    const vencimento = new Date(dataVencimento);
+    
+    if (hoje <= vencimento) return 0;
+    
+    const diffTime = Math.abs(hoje.getTime() - vencimento.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Formata valores de porcentagem
+ */
+export const formatarPorcentagem = (valor: number, casasDecimais: number = 1): string => {
+  return valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: casasDecimais,
+    maximumFractionDigits: casasDecimais
+  }) + '%';
+};
+
+/**
+ * Calcula a data estimada de pagamento baseada na data da venda
+ */
+export const calcularDataEstimadaPagamento = (dataVenda: string | null): string | null => {
+  if (!dataVenda) return null;
+  
+  try {
+    // Adiciona 30 dias à data da venda como estimativa
+    const data = new Date(dataVenda);
+    data.setDate(data.getDate() + 30);
+    return data.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+  } catch {
+    return null;
+  }
+};

@@ -2,11 +2,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Comissao, ComissaoStatus } from "@/types/comissao.types";
+import { Comissao, ComissaoStatus, StatusValor, ParcelasPendentes, ComissaoTotais, ComissaoRecebimento } from "@/types/comissao.types";
 import { calcularTotais, filtrarComissoes } from "@/utils/comissao.helpers";
 import { obterNomeMes } from "@/utils/comissao.utils";
 import { exportarComissoesParaCSV } from "@/services/csv.service";
 import { exportarComissoesParaPDF } from "@/services/pdf.service";
+import { exportarComissoesParaExcel } from "@/services/excel.service";
 import { 
   fetchComissoes,
   adicionarComissao as addComissao,
@@ -14,7 +15,8 @@ import {
   excluirComissao as deleteComissao,
   marcarComoPago as markAsPaid,
   getRecebimentosByComissaoId,
-  adicionarRecebimento as addRecebimento
+  adicionarRecebimento as addRecebimento,
+  getParcelasPendentes
 } from "@/services/comissao.service";
 import {
   fetchMetaMensal,
@@ -24,11 +26,11 @@ import {
   getTotalRecebidoPorMesAno
 } from "@/services/meta.service";
 
-export { type ComissaoStatus, type StatusValor, type Comissao } from "@/types/comissao.types";
-
 export const useComissoes = () => {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
+  const [parcelasPendentes, setParcelasPendentes] = useState<ParcelasPendentes[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingParcelas, setIsLoadingParcelas] = useState(false);
   const [metaComissao, setMetaComissao] = useState<number>(0);
   const [mesAtual, setMesAtual] = useState(new Date().getMonth() + 1);
   const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
@@ -58,6 +60,25 @@ export const useComissoes = () => {
 
     loadComissoes();
   }, [user, toast]);
+
+  // Load parcelas pendentes
+  useEffect(() => {
+    const loadParcelasPendentes = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoadingParcelas(true);
+        const parcelas = await getParcelasPendentes(user.id);
+        setParcelasPendentes(parcelas);
+      } catch (error) {
+        console.error("Erro ao buscar parcelas pendentes:", error);
+      } finally {
+        setIsLoadingParcelas(false);
+      }
+    };
+    
+    loadParcelasPendentes();
+  }, [user, comissoes]);
 
   // Load meta mensal
   useEffect(() => {
@@ -108,7 +129,7 @@ export const useComissoes = () => {
           comissao.id === id
             ? {
                 ...comissao,
-                status: "Recebido",
+                status: "Recebido" as ComissaoStatus,
                 dataPagamento: new Date().toISOString(),
               }
             : comissao
@@ -149,13 +170,19 @@ export const useComissoes = () => {
     exportarComissoesParaCSV(comissoesParaExportar, filtros, toast);
   };
 
+  // Function to export to Excel (new)
+  const exportarParaExcel = (comissoesParaExportar: Comissao[], filtros: any) => {
+    exportarComissoesParaExcel(comissoesParaExportar, filtros, parcelasPendentes, toast);
+  };
+
   // Function to export to PDF
   const exportarParaPDF = (comissoesParaExportar: Comissao[], filtros: any) => {
-    exportarComissoesParaPDF(comissoesParaExportar, calcularTotais, filtros, toast);
+    exportarComissoesParaPDF(comissoesParaExportar, calcularTotais, filtros, parcelasPendentes, toast);
   };
 
   // Function to add a recebimento (payment receipt)
   const adicionarRecebimento = async (comissaoId: string, valor: number, data: string) => {
+    if (!user) return false;
     return addRecebimento(comissaoId, valor, data, toast);
   };
 
@@ -204,8 +231,10 @@ export const useComissoes = () => {
 
   return {
     comissoes,
+    parcelasPendentes,
     metaComissao,
     isLoading,
+    isLoadingParcelas,
     adicionarComissao,
     atualizarComissao,
     marcarComoPago,
@@ -221,6 +250,7 @@ export const useComissoes = () => {
     adicionarRecebimento,
     calcularTotais: (comissoes: Comissao[]) => calcularTotais(comissoes),
     exportarParaCSV,
+    exportarParaExcel,
     exportarParaPDF,
     getMetaMensal,
     getTotalRecebidoPorMesAno,

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, FileSpreadsheet } from "lucide-react";
+import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useComissoes, Comissao } from "@/hooks/useComissoes";
@@ -23,9 +23,9 @@ const ExportDialog = ({
   comissoesParaExportar
 }: ExportDialogProps) => {
   const { toast } = useToast();
-  const { exportarParaCSV, exportarParaPDF } = useComissoes();
+  const { exportarParaCSV, exportarParaPDF, exportarParaExcel } = useComissoes();
   
-  const [formatoExportacao, setFormatoExportacao] = useState<"csv" | "pdf">("csv");
+  const [formatoExportacao, setFormatoExportacao] = useState<"csv" | "excel" | "pdf">("pdf");
   const [filtros, setFiltros] = useState({
     incluirCliente: true,
     incluirImovel: true,
@@ -34,12 +34,14 @@ const ExportDialog = ({
     incluirDataVenda: true,
     incluirDataPagamento: true,
     incluirStatus: true,
+    incluirParcelasPendentes: true,
+    incluirResumoFinanceiro: true,
+    incluirGrafico: true,
     periodo: "todos" as "todos" | "mes" | "trimestre" | "ano" | "personalizado",
     dataInicio: "",
     dataFim: "",
+    tema: "roxo" as "roxo" | "azul" | "verde"
   });
-
-  const [temaRelatorio, setTemaRelatorio] = useState("roxo");
 
   const handleExportar = () => {
     if (comissoesParaExportar.length === 0) {
@@ -54,9 +56,10 @@ const ExportDialog = ({
     try {
       if (formatoExportacao === "csv") {
         exportarParaCSV(comissoesParaExportar, filtros);
+      } else if (formatoExportacao === "excel") {
+        exportarParaExcel(comissoesParaExportar, filtros);
       } else {
-        // Adicionando tema do relatório aos filtros
-        exportarParaPDF(comissoesParaExportar, { ...filtros, tema: temaRelatorio });
+        exportarParaPDF(comissoesParaExportar, filtros);
       }
       onOpenChange(false);
     } catch (error) {
@@ -95,37 +98,43 @@ const ExportDialog = ({
           </TabsList>
           
           <TabsContent value="formato">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div 
                 className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer hover:border-blue-300 hover:bg-blue-50 ${formatoExportacao === "csv" ? "border-blue-500 bg-blue-50" : ""}`}
                 onClick={() => setFormatoExportacao("csv")}
               >
-                <FileSpreadsheet className="h-10 w-10 text-green-600 mb-2" />
+                <FileText className="h-10 w-10 text-gray-600 mb-2" />
                 <span className="font-medium">CSV</span>
-                <span className="text-sm text-slate-500 text-center">Compatível com Excel e outros editores de planilha</span>
+                <span className="text-sm text-slate-500 text-center">Formato simples de dados</span>
               </div>
               
               <div 
-                className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer hover:border-blue-300 hover:bg-blue-50 ${formatoExportacao === "pdf" ? "border-blue-500 bg-blue-50" : ""}`}
+                className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer hover:border-green-300 hover:bg-green-50 ${formatoExportacao === "excel" ? "border-green-500 bg-green-50" : ""}`}
+                onClick={() => setFormatoExportacao("excel")}
+              >
+                <FileSpreadsheet className="h-10 w-10 text-green-600 mb-2" />
+                <span className="font-medium">Excel</span>
+                <span className="text-sm text-slate-500 text-center">Planilha formatada com abas</span>
+              </div>
+              
+              <div 
+                className={`border rounded-lg p-4 flex flex-col items-center cursor-pointer hover:border-purple-300 hover:bg-purple-50 ${formatoExportacao === "pdf" ? "border-purple-500 bg-purple-50" : ""}`}
                 onClick={() => setFormatoExportacao("pdf")}
               >
-                <FileText className="h-10 w-10 text-red-600 mb-2" />
+                <FileDown className="h-10 w-10 text-red-600 mb-2" />
                 <span className="font-medium">PDF</span>
-                <span className="text-sm text-slate-500 text-center">Documento formatado para impressão</span>
+                <span className="text-sm text-slate-500 text-center">Relatório formatado completo</span>
               </div>
             </div>
             
-            <div className={`bg-amber-50 border border-amber-200 rounded-md p-3 mt-4 flex items-start ${formatoExportacao === "pdf" ? "hidden" : ""}`}>
-              <div className="text-amber-600 mr-2 mt-0.5">⚠️</div>
-              <div className="text-sm text-amber-800">
-                {`Serão exportadas ${comissoesParaExportar.length} comissões no formato CSV.`}
-              </div>
-            </div>
-
-            <div className={`bg-violet-50 border border-violet-200 rounded-md p-3 mt-4 flex items-start ${formatoExportacao === "csv" ? "hidden" : ""}`}>
-              <div className="text-violet-600 mr-2 mt-0.5">📄</div>
+            <div className="bg-violet-50 border border-violet-200 rounded-md p-3 mt-4 flex items-start">
+              <div className="text-violet-600 mr-2 mt-0.5">ℹ️</div>
               <div className="text-sm text-violet-800">
-                Seu relatório em PDF será formatado com cores modernas e layout profissional para impressão ou compartilhamento.
+                {formatoExportacao === "csv" 
+                  ? "O formato CSV é simples e pode ser aberto em qualquer programa de planilha, mas sem formatação."
+                  : formatoExportacao === "excel"
+                  ? "O formato Excel inclui formatação, abas organizadas e totais calculados automaticamente."
+                  : "O formato PDF gera um relatório completo e formatado, ideal para impressão e compartilhamento."}
               </div>
             </div>
           </TabsContent>
@@ -194,6 +203,44 @@ const ExportDialog = ({
                 />
                 <Label htmlFor="incluirStatus">Status</Label>
               </div>
+              
+              <div className="h-px bg-slate-200 my-2"></div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="incluirParcelasPendentes" 
+                  checked={filtros.incluirParcelasPendentes} 
+                  onCheckedChange={() => toggleFiltro("incluirParcelasPendentes")}
+                  disabled={formatoExportacao === "csv"}
+                />
+                <Label htmlFor="incluirParcelasPendentes" className={formatoExportacao === "csv" ? "text-gray-400" : ""}>
+                  Detalhes de Parcelas Pendentes
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="incluirResumoFinanceiro" 
+                  checked={filtros.incluirResumoFinanceiro} 
+                  onCheckedChange={() => toggleFiltro("incluirResumoFinanceiro")}
+                  disabled={formatoExportacao === "csv"}
+                />
+                <Label htmlFor="incluirResumoFinanceiro" className={formatoExportacao === "csv" ? "text-gray-400" : ""}>
+                  Resumo Financeiro
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="incluirGrafico" 
+                  checked={filtros.incluirGrafico} 
+                  onCheckedChange={() => toggleFiltro("incluirGrafico")}
+                  disabled={formatoExportacao !== "pdf"}
+                />
+                <Label htmlFor="incluirGrafico" className={formatoExportacao !== "pdf" ? "text-gray-400" : ""}>
+                  Gráficos Visuais (apenas PDF)
+                </Label>
+              </div>
             </div>
           </TabsContent>
           
@@ -246,8 +293,8 @@ const ExportDialog = ({
               <Label htmlFor="tema">Tema do Relatório</Label>
               <div className="grid grid-cols-3 gap-3 mt-2">
                 <div 
-                  className={`relative border rounded-lg p-4 cursor-pointer ${temaRelatorio === "roxo" ? "border-purple-500 ring-2 ring-purple-200" : "border-gray-200 hover:border-purple-300"}`}
-                  onClick={() => setTemaRelatorio("roxo")}
+                  className={`relative border rounded-lg p-4 cursor-pointer ${filtros.tema === "roxo" ? "border-purple-500 ring-2 ring-purple-200" : "border-gray-200 hover:border-purple-300"}`}
+                  onClick={() => setFiltros(prev => ({ ...prev, tema: "roxo" }))}
                 >
                   <div className="flex flex-col gap-1 items-center">
                     <div className="w-full h-3 rounded bg-purple-600"></div>
@@ -255,14 +302,14 @@ const ExportDialog = ({
                     <div className="w-3/4 h-2 rounded bg-purple-200"></div>
                   </div>
                   <p className="text-xs text-center mt-2 font-medium">Roxo</p>
-                  {temaRelatorio === "roxo" && (
+                  {filtros.tema === "roxo" && (
                     <div className="absolute -top-2 -right-2 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
                   )}
                 </div>
                 
                 <div 
-                  className={`relative border rounded-lg p-4 cursor-pointer ${temaRelatorio === "azul" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300"}`}
-                  onClick={() => setTemaRelatorio("azul")}
+                  className={`relative border rounded-lg p-4 cursor-pointer ${filtros.tema === "azul" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300"}`}
+                  onClick={() => setFiltros(prev => ({ ...prev, tema: "azul" }))}
                 >
                   <div className="flex flex-col gap-1 items-center">
                     <div className="w-full h-3 rounded bg-blue-600"></div>
@@ -270,14 +317,14 @@ const ExportDialog = ({
                     <div className="w-3/4 h-2 rounded bg-blue-200"></div>
                   </div>
                   <p className="text-xs text-center mt-2 font-medium">Azul</p>
-                  {temaRelatorio === "azul" && (
+                  {filtros.tema === "azul" && (
                     <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
                   )}
                 </div>
                 
                 <div 
-                  className={`relative border rounded-lg p-4 cursor-pointer ${temaRelatorio === "verde" ? "border-green-500 ring-2 ring-green-200" : "border-gray-200 hover:border-green-300"}`}
-                  onClick={() => setTemaRelatorio("verde")}
+                  className={`relative border rounded-lg p-4 cursor-pointer ${filtros.tema === "verde" ? "border-green-500 ring-2 ring-green-200" : "border-gray-200 hover:border-green-300"}`}
+                  onClick={() => setFiltros(prev => ({ ...prev, tema: "verde" }))}
                 >
                   <div className="flex flex-col gap-1 items-center">
                     <div className="w-full h-3 rounded bg-green-600"></div>
@@ -285,7 +332,7 @@ const ExportDialog = ({
                     <div className="w-3/4 h-2 rounded bg-green-200"></div>
                   </div>
                   <p className="text-xs text-center mt-2 font-medium">Verde</p>
-                  {temaRelatorio === "verde" && (
+                  {filtros.tema === "verde" && (
                     <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
                   )}
                 </div>
@@ -298,6 +345,12 @@ const ExportDialog = ({
                 <li>• Cabeçalho com dados da empresa</li>
                 <li>• Resumo de valores em formato visual</li>
                 <li>• Tabela de comissões detalhada</li>
+                {formatoExportacao === "pdf" && filtros.incluirParcelasPendentes && (
+                  <li>• Seção de parcelas pendentes com detalhes</li>
+                )}
+                {formatoExportacao === "excel" && (
+                  <li>• Planilha com múltiplas abas organizadas</li>
+                )}
                 <li>• Formatação profissional com cores e estilos</li>
               </ul>
             </div>
@@ -308,8 +361,15 @@ const ExportDialog = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleExportar} className={formatoExportacao === "pdf" ? "bg-purple-600 hover:bg-purple-700" : ""}>
-            {formatoExportacao === "csv" ? "Exportar CSV" : "Exportar PDF"}
+          <Button 
+            onClick={handleExportar} 
+            className={
+              formatoExportacao === "pdf" ? "bg-purple-600 hover:bg-purple-700" : 
+              formatoExportacao === "excel" ? "bg-green-600 hover:bg-green-700" : ""
+            }
+          >
+            {formatoExportacao === "csv" ? "Exportar CSV" : 
+             formatoExportacao === "excel" ? "Exportar Excel" : "Exportar PDF"}
           </Button>
         </DialogFooter>
       </DialogContent>
