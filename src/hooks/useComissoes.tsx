@@ -6,7 +6,7 @@ import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 
 // Initialize pdfMake with fonts
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs;
 
 export type ComissaoStatus = "Pendente" | "Parcial" | "Recebido";
 export type StatusValor = "Atualizado" | "Desatualizado" | "Justificado";
