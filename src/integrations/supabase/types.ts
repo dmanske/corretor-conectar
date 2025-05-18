@@ -293,6 +293,8 @@ export type Database = {
       vendas: {
         Row: {
           cliente_id: string
+          comissao_corretor: number | null
+          comissao_imobiliaria: number | null
           created_at: string | null
           data_venda: string
           endereco: string
@@ -305,6 +307,8 @@ export type Database = {
         }
         Insert: {
           cliente_id: string
+          comissao_corretor?: number | null
+          comissao_imobiliaria?: number | null
           created_at?: string | null
           data_venda: string
           endereco: string
@@ -317,6 +321,8 @@ export type Database = {
         }
         Update: {
           cliente_id?: string
+          comissao_corretor?: number | null
+          comissao_imobiliaria?: number | null
           created_at?: string | null
           data_venda?: string
           endereco?: string
