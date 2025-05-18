@@ -23,6 +23,7 @@ import { DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ClientCard } from "@/components/ClientCard";
 
 const ClienteDetalhe = () => {
   const { id } = useParams();
@@ -150,6 +151,15 @@ const ClienteDetalhe = () => {
     }
   };
   
+  // Função utilitária para criar datas UTC a partir de 'YYYY-MM-DD'
+  function parseDateUTC(dateString) {
+    if (!dateString) return null;
+    // Aceita tanto 'YYYY-MM-DD' quanto 'YYYY-MM-DDTHH:mm:ss' (pega só a data)
+    const [datePart] = dateString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+  
   if (carregando) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -173,143 +183,71 @@ const ClienteDetalhe = () => {
     );
   }
   
+  // Funções para ações dos botões
+  const handleWhatsAppClick = () => {
+    window.open(`https://wa.me/55${cliente.telefone.replace(/\D/g, '')}`);
+  };
+  const handleViewDetails = () => {
+    if (vendasCliente.length > 0) {
+      // Ordena por data e pega a venda mais recente
+      const vendaMaisRecente = vendasCliente.reduce((a, b) => new Date(a.dataVenda) > new Date(b.dataVenda) ? a : b);
+      setVendaDetalhe(vendaMaisRecente);
+    } else {
+      toast({
+        title: "Sem vendas",
+        description: "Este cliente ainda não possui vendas para exibir detalhes.",
+        variant: "default"
+      });
+    }
+  };
+  const handleEdit = () => setEditando(true);
+  const handleDelete = () => setConfirmationOpen(true);
+  const handleNewSale = () => navigate(`/vendas/nova?cliente=${cliente.id}`);
+
   return (
     <div className="space-y-6">
-      {/* Header com botão de voltar */}
       <div className="flex items-center mb-4">
         <Button variant="ghost" size="sm" onClick={handleVoltar} className="mr-4">
           Voltar
         </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">{cliente.nome}</h2>
-          <p className="text-slate-500">Detalhes do cliente e histórico de vendas</p>
-        </div>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Informações do cliente */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Informações do Cliente</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-slate-500">Telefone</h4>
-                <p className="text-base">{formatarTelefone(cliente.telefone)}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-slate-500">E-mail</h4>
-                <p className="text-base">{cliente.email}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-slate-500">CPF</h4>
-                <p className="text-base">{cliente.cpf}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-slate-500">Data de Nascimento</h4>
-                <p className="text-base">{formatarData(cliente.dataNascimento)}</p>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="text-sm font-medium text-slate-500">Endereço</h4>
-              <p className="text-base">
-                {cliente.endereco}
-                {cliente.complemento && `, ${cliente.complemento}`}
-              </p>
-              <p className="text-base">
-                {cliente.cidade}/{cliente.estado}
-              </p>
-              {cliente.cep && (
-                <p className="text-base">CEP: {cliente.cep}</p>
-              )}
-            </div>
-            
-            {cliente.observacoes && (
-              <>
-                <Separator />
-                <div>
-                  <h4 className="text-sm font-medium text-slate-500">Observações</h4>
-                  <p className="text-base">{cliente.observacoes}</p>
-                </div>
-              </>
-            )}
-            
-            <div className="pt-4 flex justify-center gap-2">
-              <WhatsAppButton 
-                telefone={cliente.telefone} 
-                mensagem={`Olá ${cliente.nome}, tudo bem? Estou entrando em contato para...`}
-              />
-              <Button variant="outline" onClick={() => setEditando(true)}>
-                <Edit className="h-4 w-4 mr-1" /> Editar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Histórico de vendas */}
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle>Histórico de Vendas</CardTitle>
-              {vendasCliente.length > 0 && (
-                <Button asChild size="sm">
-                  <Link to={`/vendas/nova?cliente=${cliente.id}`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nova Venda
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {vendasCliente.length > 0 ? (
-              <div className="space-y-2">
-                {vendasCliente.map(venda => (
-                  <div key={venda.id} className="flex items-center justify-between bg-slate-50 p-2 rounded-md">
-                    <div className="flex items-center space-x-2">
-                      <Home className="h-4 w-4 text-slate-400" />
-                      <div>
-                        <p className="text-sm font-medium">{venda.tipoImovel}</p>
-                        <p className="text-xs text-slate-500">{formatarData(venda.dataVenda)} - {formatarMoeda(venda.valor)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="icon" onClick={() => setVendaDetalhe(venda)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => abrirModalEditarVenda(venda)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => setVendaParaExcluir(venda.id)}
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-12 text-center">
-                <p className="text-slate-400 mb-4">Nenhuma venda registrada para este cliente.</p>
-                <Button asChild>
-                  <Link to={`/vendas/nova?cliente=${cliente.id}`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Registrar Venda
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <ClientCard
+        name={cliente.nome}
+        clientSince={cliente.createdAt}
+        phone={cliente.telefone}
+        email={cliente.email}
+        isPremium={cliente.isPremium}
+        address={{
+          street: cliente.endereco,
+          number: cliente.numero,
+          complement: cliente.complemento,
+          city: cliente.cidade,
+          state: cliente.estado,
+          zipCode: cliente.cep,
+        }}
+        birthday={cliente.dataNascimento}
+        sales={vendasCliente.map(venda => ({
+          id: venda.id,
+          property: venda.tipoImovel,
+          date: venda.dataVenda,
+          value: venda.valor,
+          type: venda.tipoImovel === 'Prédio' ? 'predio' : venda.tipoImovel === 'Comercial' ? 'comercial' : 'casa'
+        }))}
+        onWhatsAppClick={handleWhatsAppClick}
+        onViewDetails={handleViewDetails}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onNewSale={handleNewSale}
+        onViewSale={(saleId) => {
+          const venda = vendasCliente.find(v => v.id === saleId);
+          if (venda) setVendaDetalhe(venda);
+        }}
+        onEditSale={(saleId) => {
+          const venda = vendasCliente.find(v => v.id === saleId);
+          if (venda) abrirModalEditarVenda(venda);
+        }}
+        onDeleteSale={(saleId) => setVendaParaExcluir(saleId)}
+      />
       
       {/* Diálogo de confirmação para exclusão */}
       <AlertDialog open={confirmationOpen} onOpenChange={setConfirmationOpen}>

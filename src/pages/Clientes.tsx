@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Search, 
   Plus,
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { ClientCard } from "@/components/ClientCard";
 
 const Clientes = () => {
   const [busca, setBusca] = useState("");
@@ -50,6 +51,7 @@ const Clientes = () => {
   const [salvando, setSalvando] = useState(false);
   const { toast } = useToast();
   const [ordenacao, setOrdenacao] = useState("nome");
+  const navigate = useNavigate();
   
   // Filtrar clientes com base na busca
   const clientesFiltrados = clientes.filter(cliente => 
@@ -215,18 +217,34 @@ const Clientes = () => {
         visualizacao === 'grid' ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {clientesOrdenados.map(cliente => (
-              <ClienteCard 
-                key={cliente.id} 
-                cliente={cliente} 
-                formatarTelefone={formatarTelefone} 
-                formatarMoeda={formatarMoeda}
-                formatarData={formatarData}
-                atualizarVenda={atualizarVenda}
-                onEditar={() => abrirModalEditar(cliente)}
-                onExcluir={() => setClienteParaExcluir(cliente)}
-                onExcluirVenda={setVendaParaExcluir}
-                vendas={getVendasCliente(cliente.id)}
-                visualizacao={visualizacao}
+              <ClientCard
+                key={cliente.id}
+                name={cliente.nome}
+                clientSince={cliente.createdAt}
+                phone={cliente.telefone}
+                email={cliente.email}
+                isPremium={cliente.isPremium}
+                address={{
+                  street: cliente.endereco,
+                  number: cliente.numero,
+                  complement: cliente.complemento,
+                  city: cliente.cidade,
+                  state: cliente.estado,
+                  zipCode: cliente.cep,
+                }}
+                birthday={cliente.dataNascimento}
+                sales={getVendasCliente(cliente.id).map(venda => ({
+                  id: venda.id,
+                  property: venda.tipoImovel,
+                  date: venda.dataVenda,
+                  value: venda.valor,
+                  type: venda.tipoImovel === 'Prédio' ? 'predio' : venda.tipoImovel === 'Comercial' ? 'comercial' : 'casa'
+                }))}
+                onWhatsAppClick={() => window.open(`https://wa.me/55${cliente.telefone.replace(/\D/g, '')}`)}
+                onViewDetails={() => navigate(`/clientes/${cliente.id}`)}
+                onEdit={() => abrirModalEditar(cliente)}
+                onDelete={() => setClienteParaExcluir(cliente)}
+                compact={true}
               />
             ))}
           </div>
@@ -418,275 +436,6 @@ const Clientes = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-};
-
-// Componente para exibir o card de cliente
-const ClienteCard = ({ 
-  cliente,
-  formatarTelefone,
-  formatarMoeda,
-  formatarData,
-  atualizarVenda,
-  onEditar,
-  onExcluir,
-  onExcluirVenda,
-  vendas,
-  visualizacao
-}: { 
-  cliente: Cliente;
-  formatarTelefone: (telefone: string) => string;
-  formatarMoeda: (valor: number) => string;
-  formatarData: (data: string) => string;
-  atualizarVenda: (id: string, dados: Partial<any>) => Promise<boolean>; // Updated to match useVendas return type
-  onEditar: () => void;
-  onExcluir: () => void;
-  onExcluirVenda: (vendaId: string) => void;
-  vendas: Venda[];
-  visualizacao: 'grid' | 'lista';
-}) => {
-  const [vendaDetalhe, setVendaDetalhe] = useState<any | null>(null);
-  const [vendaEditando, setVendaEditando] = useState<any | null>(null);
-  const [formVenda, setFormVenda] = useState<any>({});
-  const [salvandoVenda, setSalvandoVenda] = useState(false);
-  const { toast } = useToast();
-  
-  const formatarDataNascimento = (data: string): string => {
-    if (!data) return "-";
-    try {
-      const [year, month, day] = data.split('-');
-      return `${day}/${month}/${year}`;
-    } catch (e) {
-      return data;
-    }
-  };
-
-  // Verificar se é aniversário hoje (lógica UTC)
-  const isAniversarioHoje = () => {
-    if (!cliente.dataNascimento) return false;
-
-    let dataNascimentoObj;
-    // Tentar com formato padrão (YYYY-MM-DD), interpretando como UTC
-    const partes = cliente.dataNascimento.split('-');
-    if (partes.length === 3) {
-      dataNascimentoObj = new Date(Date.UTC(
-        parseInt(partes[0]), // ano
-        parseInt(partes[1]) - 1, // mês (0-11)
-        parseInt(partes[2]) // dia
-      ));
-    } else {
-      // Fallback para datas que possam estar como DD/MM/YYYY
-      const partesAlternativas = cliente.dataNascimento.split('/');
-      if (partesAlternativas.length === 3) {
-        dataNascimentoObj = new Date(Date.UTC(
-          parseInt(partesAlternativas[2]), // ano
-          parseInt(partesAlternativas[1]) - 1, // mês (0-11)
-          parseInt(partesAlternativas[0]) // dia
-        ));
-      } else {
-        return false; // Formato não reconhecido
-      }
-    }
-
-    if (!isValid(dataNascimentoObj)) return false;
-
-    const hoje = new Date();
-    return (
-      dataNascimentoObj.getUTCDate() === hoje.getUTCDate() &&
-      dataNascimentoObj.getUTCMonth() === hoje.getUTCMonth()
-    );
-  };
-
-  // Filtrar vendas do cliente
-  const vendasCliente = vendas.filter(venda => venda.clienteId === cliente.id);
-  const ultimaVenda = vendasCliente.length > 0 ? vendasCliente.reduce((a, b) => new Date(a.dataVenda) > new Date(b.dataVenda) ? a : b) : null;
-  const anoCadastro = cliente.createdAt ? new Date(cliente.createdAt).getFullYear() : null;
-
-  // Função para abrir modal de edição
-  const abrirModalEditarVenda = (venda: any) => {
-    setVendaEditando(venda);
-    setFormVenda({ ...venda });
-  };
-
-  // Função para salvar edição da venda
-  const salvarEdicaoVenda = async () => {
-    if (!vendaEditando) return;
-    setSalvandoVenda(true);
-    const result = await atualizarVenda(vendaEditando.id, formVenda);
-    setSalvandoVenda(false);
-    setVendaEditando(null);
-    
-    if (result) {
-      toast({
-        title: "Venda atualizada",
-        description: "Os dados da venda foram atualizados.",
-        variant: "success"
-      });
-    }
-  };
-
-  return (
-    <Card className="hover:shadow-lg transition-shadow border border-slate-200">
-      <CardContent className="p-5">
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-lg">{cliente.nome}</h3>
-            </div>
-            <p className="text-sm text-slate-500">{formatarTelefone(cliente.telefone)}</p>
-            <p className="text-sm text-slate-500">{cliente.email}</p>
-          </div>
-          {/* Container para WhatsApp e Badge */}
-          <div className="flex flex-col items-end space-y-2">
-            <WhatsAppButton telefone={cliente.telefone} size="sm" />
-            {isAniversarioHoje() && (
-              <Badge 
-                variant="destructive" 
-                className="bg-pink-500 text-white text-xs px-2 py-1"
-              >
-                🎉 Aniversário Hoje
-              </Badge>
-            )}
-          </div>
-        </div>
-        
-        <div className="mt-3 pt-3 border-t border-slate-100">
-          <p className="text-sm text-slate-500 mb-1">
-            <span className="font-medium text-slate-700">Endereço:</span> {cliente.endereco}
-            {cliente.complemento && `, ${cliente.complemento}`}, {cliente.cidade}/{cliente.estado}{cliente.cep ? ` • CEP: ${cliente.cep}` : ''}
-          </p>
-          <p className="text-sm text-slate-500">
-            <span className="font-medium text-slate-700">Aniversário:</span> {formatarDataNascimento(cliente.dataNascimento)}
-          </p>
-          {/* Cliente desde */}
-          {anoCadastro && (
-            <p className="text-xs text-slate-400">Cliente desde {anoCadastro}</p>
-          )}
-          {/* Última venda */}
-          {ultimaVenda && (
-            <p className="text-xs text-blue-700 mt-1">Última venda: {formatarData(ultimaVenda.dataVenda)} - {formatarMoeda(ultimaVenda.valor)}</p>
-          )}
-        </div>
-
-        {/* Lista de vendas */}
-        {vendasCliente.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-slate-700">Vendas ({vendasCliente.length})</h4>
-              <Button asChild size="sm">
-                <Link to={`/vendas/nova?cliente=${cliente.id}`}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Nova Venda
-                </Link>
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {vendasCliente.map(venda => (
-                <div key={venda.id} className="flex items-center justify-between bg-slate-50 p-2 rounded-md">
-                  <div className="flex items-center space-x-2">
-                    <Home className="h-4 w-4 text-slate-400" />
-                    <div>
-                      <p className="text-sm font-medium">{venda.tipoImovel}</p>
-                      <p className="text-xs text-slate-500">{formatarData(venda.dataVenda)} - {formatarMoeda(venda.valor)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => setVendaDetalhe(venda)}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => abrirModalEditarVenda(venda)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => onExcluirVenda(venda.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/clientes/${cliente.id}`} state={{ visualizacao }}>Ver detalhes</Link>
-          </Button>
-          <Button variant="secondary" size="sm" onClick={onEditar}>
-            Editar
-          </Button>
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={onExcluir}
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Modal de detalhes da venda */}
-        <Dialog open={!!vendaDetalhe} onOpenChange={open => { if (!open) setVendaDetalhe(null); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Detalhes da Venda</DialogTitle>
-            </DialogHeader>
-            {vendaDetalhe && (
-              <div className="space-y-2">
-                <p><b>Tipo do imóvel:</b> {vendaDetalhe.tipoImovel}</p>
-                <p><b>Valor:</b> {formatarMoeda(vendaDetalhe.valor)}</p>
-                <p><b>Data da venda:</b> {formatarData(vendaDetalhe.dataVenda)}</p>
-                <p><b>Observação:</b> {vendaDetalhe.observacao || '-'}</p>
-                {/* Adicione outros campos se necessário */}
-              </div>
-            )}
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Fechar</Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal de edição da venda */}
-        <Dialog open={!!vendaEditando} onOpenChange={open => { if (!open) setVendaEditando(null); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Editar Venda</DialogTitle>
-            </DialogHeader>
-            {vendaEditando && (
-              <form onSubmit={e => { e.preventDefault(); salvarEdicaoVenda(); }} className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Tipo do imóvel</label>
-                  <input className="w-full border rounded px-2 py-1" value={formVenda.tipoImovel || ''} onChange={e => setFormVenda(f => ({ ...f, tipoImovel: e.target.value }))} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Valor</label>
-                  <input className="w-full border rounded px-2 py-1" type="number" value={formVenda.valor || ''} onChange={e => setFormVenda(f => ({ ...f, valor: e.target.value }))} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Data da venda</label>
-                  <input className="w-full border rounded px-2 py-1" type="date" value={formVenda.dataVenda ? formVenda.dataVenda.slice(0,10) : ''} onChange={e => setFormVenda(f => ({ ...f, dataVenda: e.target.value }))} required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Observação</label>
-                  <textarea className="w-full border rounded px-2 py-1" value={formVenda.observacao || ''} onChange={e => setFormVenda(f => ({ ...f, observacao: e.target.value }))} />
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={salvandoVenda}>{salvandoVenda ? "Salvando..." : "Salvar"}</Button>
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancelar</Button>
-                  </DialogClose>
-                </DialogFooter>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
   );
 };
 
