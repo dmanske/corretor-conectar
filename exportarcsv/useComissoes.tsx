@@ -1,32 +1,15 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Comissao, ComissaoStatus, StatusValor } from "@/types/comissao.types";
+import { calcularTotais, filtrarComissoes } from "@/utils/comissao.helpers";
+import { obterNomeMes, escapeCSV } from "@/utils/comissao.utils";
+import { exportarComissoesParaCSV } from "@/services/csv.service";
+import { exportarComissoesParaPDF } from "@/services/pdf.service";
 
-export type ComissaoStatus = "Pendente" | "Parcial" | "Recebido";
-export type StatusValor = "Atualizado" | "Desatualizado" | "Justificado";
-
-export interface Comissao {
-  id: string;
-  vendaId: string;
-  cliente: string;
-  imovel: string;
-  valorVenda: number;
-  valorComissaoImobiliaria: number;
-  valorComissaoCorretor: number;
-  dataContrato: string;
-  dataVenda: string;
-  dataPagamento: string | null;
-  status: ComissaoStatus;
-  // Campos adicionais para conformidade com o banco de dados
-  valorOriginalVenda?: number;
-  valorAtualVenda?: number;
-  diferencaValor?: number;
-  statusValor?: StatusValor;
-  justificativa?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type { ComissaoStatus, StatusValor, Comissao };
 
 export const useComissoes = () => {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
@@ -259,79 +242,9 @@ export const useComissoes = () => {
     return comissoes.filter((comissao) => comissao.status === status);
   };
 
-  const exportarParaCSV = (comissoesParaExportar: Comissao[], filtros: any) => {
-    const {
-      incluirCliente,
-      incluirImovel,
-      incluirValorVenda,
-      incluirValorComissao,
-      incluirDataVenda,
-      incluirDataPagamento,
-      incluirStatus,
-    } = filtros;
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    // Função para escapar campos CSV
-    function escapeCSV(value: any) {
-      if (value === null || value === undefined) return '';
-      let str = String(value);
-      if (str.includes('"')) str = str.replace(/"/g, '""');
-      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-        str = '"' + str + '"';
-      }
-      return str;
-    }
-
-    // Cabeçalho
-    const header = [
-      incluirCliente ? "Cliente" : null,
-      incluirImovel ? "Imóvel" : null,
-      incluirValorVenda ? "Valor da Venda" : null,
-      incluirValorComissao ? "Valor da Comissão" : null,
-      incluirDataVenda ? "Data da Venda" : null,
-      incluirDataPagamento ? "Data de Pagamento" : null,
-      incluirStatus ? "Status" : null,
-    ].filter(v => v !== null && v !== undefined).join(",");
-    
-    csvContent += header + "\r\n";
-
-    // Conteúdo das linhas
-    comissoesParaExportar.forEach(comissao => {
-      const row = [
-        incluirCliente ? escapeCSV(comissao.cliente) : null,
-        incluirImovel ? escapeCSV(comissao.imovel) : null,
-        incluirValorVenda ? escapeCSV(comissao.valorVenda) : null,
-        incluirValorComissao ? escapeCSV(comissao.valorComissaoCorretor) : null,
-        incluirDataVenda ? escapeCSV(comissao.dataVenda) : null,
-        incluirDataPagamento ? escapeCSV(comissao.dataPagamento) : null,
-        incluirStatus ? escapeCSV(comissao.status) : null,
-      ].filter(v => v !== null && v !== undefined).join(",");
-      
-      csvContent += row + "\r\n";
-    });
-
-    // Toast bonito do sistema
-    toast({
-      title: "Exportação iniciada",
-      description: "O download do arquivo CSV está sendo gerado.",
-      variant: "success"
-    });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "comissoes.csv");
-    document.body.appendChild(link); // Required for FF
-
-    link.click();
-    document.body.removeChild(link);
-  };
-
+  // Wrapper functions for exports
   const exportarParaPDF = (comissoesParaExportar: Comissao[], filtros: any) => {
-    toast({
-      title: "Em desenvolvimento",
-      description: "A exportação para PDF estará disponível em breve.",
-    });
+    exportarComissoesParaPDF(comissoesParaExportar, calcularTotais, filtros, toast);
   };
 
   const getMetaMensal = async (mes: number, ano: number): Promise<number> => {
@@ -388,14 +301,6 @@ export const useComissoes = () => {
     }
   };
 
-  const obterNomeMes = (mes: number): string => {
-    const nomesDosMeses = [
-      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-    ];
-    return nomesDosMeses[mes - 1] || "";
-  };
-
   const getRecebimentosByComissaoId = async (comissaoId: string): Promise<any[]> => {
     try {
       const { data, error } = await supabase
@@ -442,60 +347,6 @@ export const useComissoes = () => {
         description: "Não foi possível adicionar o recebimento.",
       });
     }
-  };
-
-  const calcularTotais = (comissoesFiltradas: Comissao[]) => {
-    const total = comissoesFiltradas.reduce((acc, comissao) => acc + (comissao.valorComissaoCorretor || 0), 0);
-    const recebido = comissoesFiltradas
-      .filter(c => c.status === "Recebido")
-      .reduce((acc, comissao) => acc + (comissao.valorComissaoCorretor || 0), 0);
-    const pendente = comissoesFiltradas
-      .filter(c => c.status === "Pendente")
-      .reduce((acc, comissao) => acc + (comissao.valorComissaoCorretor || 0), 0);
-    const parcial = comissoesFiltradas
-      .filter(c => c.status === "Parcial")
-      .reduce((acc, comissao) => {
-        // Aqui precisaríamos calcular quanto já foi recebido parcialmente
-        // Como não temos essa info no tipo, vamos considerar metade
-        return acc + (comissao.valorComissaoCorretor || 0) / 2;
-      }, 0);
-
-    return { total, recebido, pendente, parcial };
-  };
-
-  const filtrarComissoes = (tab: string, filtro: string, periodo: string) => {
-    let comissoesFiltradas = [...comissoes];
-
-    // Filtra por status (tab)
-    if (tab !== "todas") {
-      comissoesFiltradas = comissoesFiltradas.filter(
-        (comissao) => comissao.status === tab
-      );
-    }
-
-    // Filtra por texto (filtro)
-    if (filtro) {
-      const filtroLower = filtro.toLowerCase();
-      comissoesFiltradas = comissoesFiltradas.filter(
-        (comissao) =>
-          comissao.cliente.toLowerCase().includes(filtroLower) ||
-          comissao.imovel.toLowerCase().includes(filtroLower)
-      );
-    }
-
-    // Filtra por período
-    if (periodo !== "todos") {
-      const hoje = new Date();
-      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-
-      comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
-        const dataVenda = new Date(comissao.dataVenda);
-        return dataVenda >= inicioMes && dataVenda <= fimMes;
-      });
-    }
-
-    return comissoesFiltradas;
   };
 
   const alterarPeriodoAtual = (mes: number, ano: number) => {
@@ -609,7 +460,7 @@ export const useComissoes = () => {
   };
 
   const totais = useMemo(() => {
-    const comissoesFiltradas = filtrarComissoes("todas", "", "todos");
+    const comissoesFiltradas = filtrarComissoes(comissoes, "todas", "", "todos");
     const totalComissoes = comissoesFiltradas.reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
     const totalPendente = comissoesFiltradas
       .filter(c => c.status === "Pendente")
@@ -633,6 +484,40 @@ export const useComissoes = () => {
     };
   }, [comissoes, metaComissao]);
 
+  // Function for exporting to CSV 
+  const exportarParaCSV = (comissoesParaExportar: Comissao[], filtros: any) => {
+    exportarComissoesParaCSV(comissoesParaExportar, filtros, toast);
+  };
+
+  // Function to get total payments by month/year
+  const getTotalRecebidoPorMesAno = async (mes: number, ano: number) => {
+    try {
+      const inicioAno = `${ano}-01-01`;
+      const fimAno = `${ano}-12-31`;
+      const { data, error } = await supabase
+        .from('comissao_recebimentos')
+        .select('valor, data')
+        .gte('data', inicioAno)
+        .lte('data', fimAno);
+      if (error) {
+        console.error('Erro ao buscar recebimentos do ano:', error);
+        return 0;
+      }
+      // Filtra pelo mês e ano exatos usando split da string
+      return (data || []).reduce((acc, r) => {
+        if (!r.data) return acc;
+        const [yyyy, mm] = r.data.split('-');
+        if (parseInt(yyyy) === ano && parseInt(mm) === mes) {
+          return acc + (r.valor || 0);
+        }
+        return acc;
+      }, 0);
+    } catch (err) {
+      console.error('Erro ao buscar recebimentos do mês:', err);
+      return 0;
+    }
+  };
+
   return {
     comissoes,
     metaComissao,
@@ -642,7 +527,7 @@ export const useComissoes = () => {
     marcarComoPago,
     excluirComissao,
     atualizarMeta,
-    filtrarComissoes,
+    filtrarComissoes: (tab: string, filtro: string, periodo: string) => filtrarComissoes(comissoes, tab, filtro, periodo),
     totais,
     mesAtual,
     anoAtual,
@@ -650,10 +535,10 @@ export const useComissoes = () => {
     obterNomeMes,
     getRecebimentosByComissaoId,
     adicionarRecebimento,
-    calcularTotais,
+    calcularTotais: (comissoes: Comissao[]) => calcularTotais(comissoes),
     exportarParaCSV,
     exportarParaPDF,
-    getMetaMensal
+    getMetaMensal,
+    getTotalRecebidoPorMesAno
   };
 };
-
