@@ -202,12 +202,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // 4. Redirecionar para a página de auth
-      window.location.replace('/auth');
+      window.location.replace('/#/auth');
       
     } catch (error) {
       console.error("Logout error:", error);
       // Mesmo com erro, forçar redirecionamento
-      window.location.replace('/auth');
+      window.location.replace('/#/auth');
     }
   };
 
