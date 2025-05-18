@@ -1,7 +1,5 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { createClient } from '@supabase/supabase-js';
 import { Session, User } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
 
@@ -161,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loginWithGoogle = async () => {
     try {
-      // Fix the redirectTo URL to be absolute
+      // Get the absolute URL for redirection
       const origin = window.location.origin;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

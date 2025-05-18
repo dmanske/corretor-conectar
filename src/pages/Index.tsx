@@ -9,11 +9,11 @@ const Index = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // If authenticated and done loading, ensure we stay on the page
     if (isAuthenticated && !isLoading) {
-      console.log("Usuario autenticado no Index, carregando Dashboard");
+      console.log("Usuário autenticado no Index, carregando Dashboard");
+      // No navigation needed here since we'll render the Dashboard directly
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading]);
   
   // Show loading state while checking auth
   if (isLoading) {
