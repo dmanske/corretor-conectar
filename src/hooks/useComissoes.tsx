@@ -8,7 +8,8 @@ import {
   StatusValor, 
   ParcelasPendentes, 
   ComissaoTotais, 
-  ComissaoRecebimento 
+  ComissaoRecebimento,
+  PdfExportOptions
 } from "@/types/comissao.types";
 import { calcularTotais, filtrarComissoes } from "@/utils/comissao.helpers";
 import { obterNomeMes } from "@/utils/comissao.utils";
@@ -180,14 +181,24 @@ export const useComissoes = () => {
     exportarComissoesParaCSV(comissoesParaExportar, filtros, toast);
   };
 
-  // Function to export to Excel (new)
+  // Function to export to Excel
   const exportarParaExcel = (comissoesParaExportar: Comissao[], filtros: any) => {
     exportarComissoesParaExcel(comissoesParaExportar, filtros, parcelasPendentes, toast);
   };
 
   // Function to export to PDF
-  const exportarParaPDF = (comissoesParaExportar: Comissao[], filtros: any) => {
-    exportarComissoesParaPDF(comissoesParaExportar, calcularTotais, filtros, parcelasPendentes, toast);
+  const exportarParaPDF = (comissoesParaExportar: Comissao[], filtros: PdfExportOptions) => {
+    // Aplicar filtro de período se necessário
+    const comissoesFiltradas = filtrarComissoes(
+      comissoesParaExportar, 
+      "todas", 
+      "", 
+      filtros.periodo || "todos", 
+      filtros.dataInicio, 
+      filtros.dataFim
+    );
+    
+    exportarComissoesParaPDF(comissoesFiltradas, calcularTotais, filtros, parcelasPendentes, toast);
   };
 
   // Function to add a recebimento (payment receipt)
@@ -250,7 +261,8 @@ export const useComissoes = () => {
     marcarComoPago,
     excluirComissao,
     atualizarMeta,
-    filtrarComissoes: (tab: string, filtro: string, periodo: string) => filtrarComissoes(comissoes, tab, filtro, periodo),
+    filtrarComissoes: (tab: string, filtro: string, periodo: string, dataInicio?: string, dataFim?: string) => 
+      filtrarComissoes(comissoes, tab, filtro, periodo, dataInicio, dataFim),
     totais,
     mesAtual,
     anoAtual,

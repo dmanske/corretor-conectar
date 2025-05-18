@@ -1,8 +1,9 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, FileText, BarChart, PieChart, LineChart } from "lucide-react";
+import { Download, FileText, BarChart, PieChart, LineChart, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useVendas } from "@/hooks/useVendas";
 import { useComissoes } from "@/hooks/useComissoes";
@@ -12,8 +13,12 @@ const Relatorios = () => {
   const { toast } = useToast();
   const [periodo, setPeriodo] = useState("mes");
   const { vendas, formatarMoeda } = useVendas();
-  const { comissoes, calcularTotais, exportarParaPDF } = useComissoes();
+  const { comissoes, calcularTotais, exportarParaPDF, exportarParaExcel } = useComissoes();
   const { clientes } = useClientes();
+  
+  // Adicionar estados para período personalizado
+  const [dataInicio, setDataInicio] = useState("");
+  const [dataFim, setDataFim] = useState("");
   
   // Dados calculados para relatórios
   const dadosVendas = {
@@ -47,7 +52,13 @@ const Relatorios = () => {
           incluirDataVenda: true,
           incluirDataPagamento: true,
           incluirStatus: true,
-          periodo: periodo
+          periodo: periodo,
+          dataInicio: periodo === "personalizado" ? dataInicio : undefined,
+          dataFim: periodo === "personalizado" ? dataFim : undefined,
+          incluirParcelasPendentes: true,
+          incluirResumoFinanceiro: true,
+          incluirGrafico: true,
+          tema: "roxo" as "roxo" | "azul" | "verde"
         };
         
         exportarParaPDF(comissoes, filtros);
@@ -68,16 +79,52 @@ const Relatorios = () => {
   };
   
   const handleExportExcel = () => {
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A exportação para Excel será disponibilizada em breve.",
-    });
+    if (tabSelecionada === "comissoes") {
+      const filtros = {
+        incluirCliente: true,
+        incluirImovel: true,
+        incluirValorVenda: true,
+        incluirValorComissao: true,
+        incluirDataVenda: true,
+        incluirDataPagamento: true,
+        incluirStatus: true,
+        periodo: periodo,
+        dataInicio: periodo === "personalizado" ? dataInicio : undefined,
+        dataFim: periodo === "personalizado" ? dataFim : undefined,
+        incluirParcelasPendentes: true
+      };
+      
+      exportarParaExcel(comissoes, filtros);
+    } else {
+      toast({
+        title: "Funcionalidade em desenvolvimento",
+        description: "A exportação para Excel será disponibilizada em breve.",
+      });
+    }
   };
   
   // Controle da tab selecionada
   const [tabSelecionada, setTabSelecionada] = useState("vendas");
   const handleTabChange = (value: string) => {
     setTabSelecionada(value);
+  };
+
+  // Função para manipular a alteração de período
+  const handlePeriodoChange = (novoPeriodo: string) => {
+    setPeriodo(novoPeriodo);
+    
+    // Se mudar para personalizado, inicializar datas com valores padrão se vazios
+    if (novoPeriodo === "personalizado") {
+      if (!dataInicio) {
+        const hoje = new Date();
+        const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        setDataInicio(primeiroDiaMes.toISOString().split('T')[0]);
+      }
+      if (!dataFim) {
+        const hoje = new Date();
+        setDataFim(hoje.toISOString().split('T')[0]);
+      }
+    }
   };
 
   return (
@@ -107,10 +154,37 @@ const Relatorios = () => {
           <TabsTrigger value="metas">Metas</TabsTrigger>
         </TabsList>
 
-        <div className="flex gap-4 justify-end">
-          <Button variant={periodo === "mes" ? "default" : "outline"} size="sm" onClick={() => setPeriodo("mes")}>Mês</Button>
-          <Button variant={periodo === "trimestre" ? "default" : "outline"} size="sm" onClick={() => setPeriodo("trimestre")}>Trimestre</Button>
-          <Button variant={periodo === "ano" ? "default" : "outline"} size="sm" onClick={() => setPeriodo("ano")}>Ano</Button>
+        <div className="flex flex-wrap gap-4 justify-end items-center">
+          <div className="flex gap-3">
+            <Button variant={periodo === "mes" ? "default" : "outline"} size="sm" onClick={() => handlePeriodoChange("mes")}>Mês</Button>
+            <Button variant={periodo === "trimestre" ? "default" : "outline"} size="sm" onClick={() => handlePeriodoChange("trimestre")}>Trimestre</Button>
+            <Button variant={periodo === "ano" ? "default" : "outline"} size="sm" onClick={() => handlePeriodoChange("ano")}>Ano</Button>
+            <Button variant={periodo === "personalizado" ? "default" : "outline"} size="sm" onClick={() => handlePeriodoChange("personalizado")}>Personalizado</Button>
+          </div>
+          
+          {periodo === "personalizado" && (
+            <div className="flex gap-3 items-center">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <input
+                  type="date"
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                />
+              </div>
+              <span>até</span>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <input
+                  type="date"
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                />
+              </div>
+            </div>
+          )}
         </div>
         
         <TabsContent value="vendas" className="space-y-4">

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, FileSpreadsheet, FileDown } from "lucide-react";
+import { FileText, FileSpreadsheet, FileDown, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useComissoes, Comissao } from "@/hooks/useComissoes";
@@ -59,7 +59,21 @@ const ExportDialog = ({
       } else if (formatoExportacao === "excel") {
         exportarParaExcel(comissoesParaExportar, filtros);
       } else {
-        exportarParaPDF(comissoesParaExportar, filtros);
+        // Se for período personalizado sem datas, definir datas padrão
+        if (filtros.periodo === "personalizado" && (!filtros.dataInicio || !filtros.dataFim)) {
+          const hoje = new Date();
+          const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+          
+          const novosFiltros = {
+            ...filtros,
+            dataInicio: filtros.dataInicio || primeiroDiaMes.toISOString().split('T')[0],
+            dataFim: filtros.dataFim || hoje.toISOString().split('T')[0]
+          };
+          
+          exportarParaPDF(comissoesParaExportar, novosFiltros);
+        } else {
+          exportarParaPDF(comissoesParaExportar, filtros);
+        }
       }
       onOpenChange(false);
     } catch (error) {
@@ -77,6 +91,26 @@ const ExportDialog = ({
       ...prev,
       [filtro]: !prev[filtro]
     }));
+  };
+
+  // Atualiza o período e define datas padrão para personalizado
+  const handlePeriodoChange = (value: typeof filtros.periodo) => {
+    if (value === "personalizado" && !filtros.dataInicio && !filtros.dataFim) {
+      const hoje = new Date();
+      const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      
+      setFiltros({
+        ...filtros,
+        periodo: value,
+        dataInicio: primeiroDiaMes.toISOString().split('T')[0],
+        dataFim: hoje.toISOString().split('T')[0]
+      });
+    } else {
+      setFiltros({
+        ...filtros,
+        periodo: value
+      });
+    }
   };
 
   return (
@@ -249,7 +283,7 @@ const ExportDialog = ({
               <Label htmlFor="periodo">Período</Label>
               <Select
                 value={filtros.periodo}
-                onValueChange={(value: typeof filtros.periodo) => setFiltros(prev => ({ ...prev, periodo: value }))}
+                onValueChange={handlePeriodoChange}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o período" />
@@ -266,8 +300,11 @@ const ExportDialog = ({
             
             {filtros.periodo === "personalizado" && (
               <div className="grid grid-cols-2 gap-4 mt-2">
-                <div>
-                  <Label htmlFor="dataInicio">Data Inicial</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="dataInicio" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Data Inicial
+                  </Label>
                   <Input
                     id="dataInicio"
                     type="date"
@@ -275,8 +312,11 @@ const ExportDialog = ({
                     onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="dataFim">Data Final</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="dataFim" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Data Final
+                  </Label>
                   <Input
                     id="dataFim"
                     type="date"
@@ -284,6 +324,18 @@ const ExportDialog = ({
                     onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
                   />
                 </div>
+              </div>
+            )}
+            
+            {filtros.periodo !== "todos" && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">Observação:</span> O período selecionado será aplicado às comissões exportadas. 
+                  {filtros.periodo === "mes" && " Apenas as comissões do mês atual serão incluídas."}
+                  {filtros.periodo === "trimestre" && " Apenas as comissões do trimestre atual serão incluídas."}
+                  {filtros.periodo === "ano" && " Apenas as comissões do ano atual serão incluídas."}
+                  {filtros.periodo === "personalizado" && " Apenas as comissões do período especificado serão incluídas."}
+                </p>
               </div>
             )}
           </TabsContent>

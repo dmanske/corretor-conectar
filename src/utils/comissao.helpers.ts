@@ -1,7 +1,7 @@
 
 import { Comissao, ComissaoTotais } from "@/types/comissao.types";
 
-export const filtrarComissoes = (comissoes: Comissao[], tab: string, filtro: string, periodo: string) => {
+export const filtrarComissoes = (comissoes: Comissao[], tab: string, filtro: string, periodo: string, dataInicio?: string, dataFim?: string) => {
   let comissoesFiltradas = [...comissoes];
 
   // Filtra por status (tab)
@@ -22,15 +22,52 @@ export const filtrarComissoes = (comissoes: Comissao[], tab: string, filtro: str
   }
 
   // Filtra por período
-  if (periodo !== "todos") {
+  if (periodo && periodo !== "todos") {
     const hoje = new Date();
-    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-
-    comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
-      const dataVenda = new Date(comissao.dataVenda);
-      return dataVenda >= inicioMes && dataVenda <= fimMes;
-    });
+    
+    if (periodo === "mes") {
+      // Mês atual
+      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      
+      comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
+        const dataVenda = new Date(comissao.dataVenda);
+        return dataVenda >= inicioMes && dataVenda <= fimMes;
+      });
+    } 
+    else if (periodo === "trimestre") {
+      // Trimestre atual
+      const trimAtual = Math.floor(hoje.getMonth() / 3);
+      const inicioTrimestre = new Date(hoje.getFullYear(), trimAtual * 3, 1);
+      const fimTrimestre = new Date(hoje.getFullYear(), trimAtual * 3 + 3, 0);
+      
+      comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
+        const dataVenda = new Date(comissao.dataVenda);
+        return dataVenda >= inicioTrimestre && dataVenda <= fimTrimestre;
+      });
+    } 
+    else if (periodo === "ano") {
+      // Ano atual
+      const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+      const fimAno = new Date(hoje.getFullYear(), 11, 31);
+      
+      comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
+        const dataVenda = new Date(comissao.dataVenda);
+        return dataVenda >= inicioAno && dataVenda <= fimAno;
+      });
+    } 
+    else if (periodo === "personalizado" && dataInicio && dataFim) {
+      // Período personalizado
+      const inicio = new Date(dataInicio);
+      const fim = new Date(dataFim);
+      // Ajustar fim para incluir todo o dia final
+      fim.setHours(23, 59, 59, 999);
+      
+      comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
+        const dataVenda = new Date(comissao.dataVenda);
+        return dataVenda >= inicio && dataVenda <= fim;
+      });
+    }
   }
 
   return comissoesFiltradas;

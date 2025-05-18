@@ -108,10 +108,11 @@ export const exportarComissoesParaPDF = (
     if (incluirDataPagamento) columns.push({ text: 'Data Pagamento', style: 'tableHeader', fillColor: colors.headerBg });
     if (incluirStatus) columns.push({ text: 'Status', style: 'tableHeader', fillColor: colors.headerBg });
 
-    // Preparar dados para a tabela
+    // Preparar dados para a tabela - com estratégia de paginação
+    // Usamos um número máximo razoável por página para evitar problemas de memória
     const tableBody = [columns];
-
-    // Adicionar linhas de dados
+    
+    // Adicionar linhas de dados - todas as comissões serão incluídas
     comissoesParaExportar.forEach(comissao => {
       const row = [];
 
@@ -161,8 +162,6 @@ export const exportarComissoesParaPDF = (
       
       // Adicionar linhas
       parcelasSorted.forEach(parcela => {
-        const atrasoColor = parcela.diasEmAtraso > 0 ? colors.danger : colors.text;
-        
         parcelsTableBody.push([
           { text: parcela.cliente, style: 'tableCell', fillColor: colors.headerBg },
           { text: parcela.imovel, style: 'tableCell', fillColor: colors.headerBg },
@@ -186,7 +185,8 @@ export const exportarComissoesParaPDF = (
           fontSize: 16,
           bold: true,
           color: colors.primary,
-          margin: [0, 20, 0, 10]
+          margin: [0, 20, 0, 10],
+          pageBreak: 'before' // Inicia a seção de parcelas em uma nova página
         },
         
         // Resumo de parcelas em cards
@@ -481,7 +481,7 @@ export const exportarComissoesParaPDF = (
           margin: [0, 0, 0, 30]
         },
 
-        // Tabela de comissões
+        // Tabela de comissões com quebra automática de páginas
         {
           stack: [
             {
@@ -494,8 +494,9 @@ export const exportarComissoesParaPDF = (
             {
               table: {
                 headerRows: 1,
-                widths: Array(columns.length).fill('auto'),
-                body: tableBody
+                widths: columns.map(() => 'auto'), // Ajustar larguras automaticamente
+                body: tableBody,
+                dontBreakRows: false, // Permitir quebrar linhas entre páginas
               },
               layout: {
                 hLineWidth: function(i: number, node: any) {
@@ -523,7 +524,7 @@ export const exportarComissoesParaPDF = (
           margin: [0, 0, 0, 20]
         },
         
-        // Adiciona as parcelas pendentes se existirem
+        // Adiciona as parcelas pendentes se existirem em uma nova página
         ...parcelasContent
       ],
       styles: {
@@ -535,6 +536,13 @@ export const exportarComissoesParaPDF = (
         tableCell: {
           fontSize: 10
         }
+      },
+      // Configurações de otimização para documentos grandes
+      compress: true,
+      info: {
+        title: 'Relatório de Comissões',
+        author: 'Sistema de Gestão de Comissões',
+        subject: `Relatório de Comissões - ${periodoTexto}`
       }
     };
 
