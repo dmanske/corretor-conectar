@@ -11,11 +11,21 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Se o usuário já estiver autenticado, redireciona para a página inicial
+    // Se o usuário já estiver autenticado e não estiver carregando, redireciona para a página inicial
     if (isAuthenticated && !isLoading) {
+      console.log("Usuário já autenticado na página Auth, redirecionando para /");
       navigate("/");
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  // Se estiver carregando, mostra um indicador de carregamento
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContainer

@@ -10,9 +10,9 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: localStorage,
     persistSession: true,
-    autoRefreshToken: true
+    autoRefreshToken: true,
+    detectSessionInUrl: true
   }
 });
 
@@ -37,34 +37,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state changed", event);
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        setIsAuthenticated(!!newSession);
-        
-        // Se o usuário estiver autenticado e estiver na página de auth, redireciona para a página inicial
-        if (newSession && window.location.pathname === "/auth") {
-          navigate("/");
-        }
-      }
-    );
-
-    // THEN check for existing session
+    console.log("Auth provider montado");
+    
+    // Verificar sessão atual
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Sessão atual:", currentSession ? "Autenticado" : "Não autenticado");
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setIsAuthenticated(!!currentSession);
       setIsLoading(false);
-      
-      // Se o usuário estiver autenticado e estiver na página de auth, redireciona para a página inicial
-      if (currentSession && window.location.pathname === "/auth") {
-        navigate("/");
-      }
     });
 
+    // Configurar listener para mudanças de estado de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        console.log("Evento de autenticação:", event);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        setIsAuthenticated(!!newSession);
+        
+        if (event === 'SIGNED_IN' && newSession) {
+          console.log("Usuário autenticado, redirecionando...");
+          toast({
+            title: "Login bem-sucedido",
+            description: `Bem-vindo, ${newSession.user.user_metadata.name || newSession.user.email}!`
+          });
+          navigate("/");
+        } else if (event === 'SIGNED_OUT') {
+          console.log("Usuário deslogado");
+          navigate("/auth");
+        }
+      }
+    );
+
+    // Limpar subscription ao desmontar
     return () => {
       subscription.unsubscribe();
     };
@@ -143,16 +149,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth`
+          redirectTo: `${window.location.origin}/auth`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
 
       if (error) {
-        throw error;
+        console.error("Google login error:", error);
+        toast({
+          title: "Erro no login com Google",
+          description: error.message || "Não foi possível fazer login com o Google. Tente novamente.",
+          variant: "destructive"
+        });
+      } else {
+        console.log("Redirecionando para o Google...");
       }
-      
-      // Não precisamos fazer mais nada aqui. O callback do Google
-      // será tratado pelo listener onAuthStateChange
     } catch (error: any) {
       console.error("Login com Google error:", error);
       toast({
@@ -164,7 +178,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAuthenticated, login, register, logout, isLoading, loginWithGoogle }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isAuthenticated, 
+      login, 
+      register, 
+      logout, 
+      isLoading, 
+      loginWithGoogle 
+    }}>
       {children}
     </AuthContext.Provider>
   );

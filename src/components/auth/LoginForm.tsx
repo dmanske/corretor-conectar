@@ -45,9 +45,11 @@ const LoginForm = () => {
     setIsGoogleLoading(true);
     try {
       await loginWithGoogle();
-    } finally {
-      // O estado permanecerá carregando durante o redirecionamento
-      // Não resetamos setIsGoogleLoading pois o usuário será redirecionado
+      // Não vamos resetar o estado isGoogleLoading porque o usuário será redirecionado
+      // para a página de autenticação do Google
+    } catch (error) {
+      setIsGoogleLoading(false);
+      console.error("Error initiating Google login:", error);
     }
   };
 
