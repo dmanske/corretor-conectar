@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
@@ -52,13 +53,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Use setTimeout to avoid multiple redirections in the same tick
           setTimeout(() => {
             if (mounted) {
-              navigate("/", { replace: true });
+              navigate("/#/", { replace: true });
             }
           }, 0);
         } else if (event === 'SIGNED_OUT') {
           console.log("Usuário deslogado");
           // Use replace to prevent back button from going back to protected routes
-          navigate("/auth", { replace: true });
+          navigate("/#/auth", { replace: true });
         }
       }
     );
@@ -164,7 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/`,
+          redirectTo: `${origin}/#/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
