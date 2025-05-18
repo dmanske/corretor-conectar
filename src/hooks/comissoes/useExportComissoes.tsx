@@ -1,8 +1,7 @@
-
 import { Comissao, PdfExportOptions } from "@/types/comissao.types";
 import { ParcelasPendentes } from "@/types/comissao.types";
 import { exportarComissoesParaCSV } from "@/services/csv.service";
-import { exportarComissoesParaPDF } from "@/services/pdf.service";
+import { exportarComissoesParaPDF as exportarPdfService } from "@/services/pdf.service";
 import { exportarComissoesParaExcel } from "@/services/excel.service";
 import { calcularTotais, filtrarComissoes } from "@/utils/comissao.helpers";
 
@@ -22,18 +21,20 @@ export const useExportComissoes = (
   };
 
   // Function to export to PDF
-  const exportarParaPDF = (comissoesParaExportar: Comissao[], filtros: PdfExportOptions) => {
-    // Aplicar filtro de período se necessário
-    const comissoesFiltradas = filtrarComissoes(
+  const exportarParaPDF = (
+    comissoesParaExportar: Comissao[], 
+    filtros: PdfExportOptions
+  ) => {
+    const comissoesFiltradasFinal = filtrarComissoes(
       comissoesParaExportar, 
-      "todas", 
-      "", 
+      "todas",
+      "",
       filtros.periodo || "todos", 
       filtros.dataInicio, 
       filtros.dataFim
     );
     
-    exportarComissoesParaPDF(comissoesFiltradas, calcularTotais, filtros, parcelasPendentes, toast);
+    exportarPdfService(comissoesFiltradasFinal, calcularTotais, filtros, parcelasPendentes, toast);
   };
 
   return {

@@ -404,6 +404,61 @@ const Comissoes = () => {
     return lista;
   }, [comissoes, tab, order, filtro, hojeAtivo, dataInicial, dataFinal, mesSelecionado, anoAtual]);
 
+  // Nova lista para o diálogo de exportação: aplica filtros de status e texto da tela,
+  // mas não o filtro de período da tela (mesSelecionado, anoAtual).
+  const comissoesParaDialogoExportacao = useMemo(() => {
+    let lista = [...comissoes]; // Começa com a lista crua
+    
+    // Aplica filtro de STATUS da TELA (tab)
+    if (tab === "pendentes") {
+      lista = lista.filter(c => {
+        const status = c.status?.toLowerCase();
+        return status === "pendente" || status === "parcial";
+      });
+    } else if (tab === "recebidas") {
+      lista = lista.filter(c => c.status?.toLowerCase() === "recebido");
+    }
+    // Se tab === "todas", não filtra por status.
+
+    // Aplica filtro de TEXTO e DATA INICIO/FIM da TELA (filtro, dataInicial, dataFinal)
+    // Este bloco é semelhante ao de comissoesExibidas, mas sem o filtro de período da tela.
+    lista = lista.filter(c => {
+      // Se não há filtro de texto nem de data da tela, mantém o item
+      if (!filtro && !dataInicial && !dataFinal) return true;
+      
+      const textoLower = filtro.toLowerCase();
+      let correspondeTexto = !filtro; // Verdadeiro se não houver filtro de texto
+      
+      if (filtro) {
+        correspondeTexto = 
+          c.cliente?.toLowerCase().includes(textoLower) ||
+          c.imovel?.toLowerCase().includes(textoLower) ||
+          String(c.valorVenda).includes(textoLower) || 
+          String(c.valorComissaoCorretor).includes(textoLower) ||
+          (c.dataVenda && c.dataVenda.split('-').reverse().join('/').includes(textoLower)) ||
+          c.status?.toLowerCase().includes(textoLower);
+      }
+
+      let correspondeDataTela = true;
+      if (dataInicial && c.dataVenda < dataInicial) correspondeDataTela = false;
+      if (dataFinal && c.dataVenda > dataFinal) correspondeDataTela = false;
+      
+      // Para exportação, queremos itens que correspondam ao texto (se houver)
+      // E correspondam ao filtro de data da tela (se houver)
+      // O filtro de período principal virá do diálogo de exportação.
+      return correspondeTexto && correspondeDataTela;
+    });
+
+    // Ordenação (opcional para exportação, mas pode ser mantida por consistência se desejado)
+    lista.sort((a, b) => {
+      if (!a.cliente || !b.cliente) return 0;
+      if (order === 'az') return a.cliente.localeCompare(b.cliente);
+      return b.cliente.localeCompare(a.cliente);
+    });
+    
+    return lista;
+  }, [comissoes, tab, filtro, dataInicial, dataFinal, order]); // Removido mesSelecionado, anoAtual, hojeAtivo das dependências
+
   // Calcular recebimentos para os cards e classificar comissões
   useEffect(() => {
     async function calcularTotaisRecebimentos() {
@@ -924,7 +979,7 @@ const Comissoes = () => {
       <ExportDialog 
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
-        comissoesParaExportar={comissoesExibidas}
+        comissoesParaExportar={comissoesParaDialogoExportacao}
       />
     </div>
   );
