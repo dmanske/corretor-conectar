@@ -1,23 +1,25 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import AuthContainer from "@/components/auth/AuthContainer";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import { useAuth } from "@/hooks/useAuth";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Auth = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/";
 
   useEffect(() => {
     // Se o usuário já estiver autenticado e não estiver carregando, redireciona para a página inicial
     if (isAuthenticated && !isLoading) {
       console.log("Usuário já autenticado na página Auth, redirecionando para /");
-      navigate("/");
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, from]);
 
   // Se estiver carregando, mostra um indicador de carregamento
   if (isLoading) {
@@ -26,6 +28,10 @@ const Auth = () => {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  if (isAuthenticated) {
+    return null; // Don't render anything while redirecting
   }
 
   return (

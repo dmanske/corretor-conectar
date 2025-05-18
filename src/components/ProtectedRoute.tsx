@@ -1,6 +1,6 @@
 
 import { ReactNode, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -10,12 +10,17 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
+    // Only redirect if we're sure the user is not authenticated and loading is complete
     if (!isLoading && !isAuthenticated) {
-      navigate("/auth", { replace: true });
+      navigate("/auth", { 
+        replace: true,
+        state: { from: location.pathname }
+      });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, location.pathname]);
 
   if (isLoading) {
     return (
@@ -25,6 +30,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
+  // Don't render children until we're sure the user is authenticated
   if (!isAuthenticated) {
     return null; // useEffect will handle the navigation
   }

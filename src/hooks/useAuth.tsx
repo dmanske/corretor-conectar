@@ -31,10 +31,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     console.log("Auth provider montado");
     
+    let mounted = true;
+    
     // Set up listener for auth state changes FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Evento de autenticação:", event);
+        
+        if (!mounted) return;
+        
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setIsAuthenticated(!!newSession);
@@ -45,29 +50,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             title: "Login bem-sucedido",
             description: `Bem-vindo, ${newSession.user.user_metadata.name || newSession.user.email}!`
           });
-          navigate("/");
+          
+          // Use setTimeout to avoid multiple redirections in the same tick
+          setTimeout(() => {
+            if (mounted && window.location.pathname === "/auth") {
+              navigate("/", { replace: true });
+            }
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
           console.log("Usuário deslogado");
-          navigate("/auth");
+          // Use replace to prevent back button from going back to protected routes
+          navigate("/auth", { replace: true });
         }
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Sessão atual:", currentSession ? "Autenticado" : "Não autenticado");
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setIsAuthenticated(!!currentSession);
-      setIsLoading(false);
-      
-      if (currentSession && window.location.pathname === "/auth") {
-        navigate("/");
+    const checkSession = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        console.log("Sessão atual:", currentSession ? "Autenticado" : "Não autenticado");
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        setIsAuthenticated(!!currentSession);
+        setIsLoading(false);
+        
+        if (currentSession && window.location.pathname === "/auth") {
+          navigate("/", { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+        setIsLoading(false);
       }
-    });
+    };
+    
+    checkSession();
 
     // Limpar subscription ao desmontar
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate]);
@@ -134,7 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
-      navigate("/auth");
     } catch (error) {
       console.error("Logout error:", error);
     }
