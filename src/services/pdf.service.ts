@@ -1,3 +1,4 @@
+
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { Comissao, ComissaoTotais, PdfExportOptions, ParcelasPendentes } from "@/types/comissao.types";
@@ -167,9 +168,9 @@ export const exportarComissoesParaPDF = (
           { text: parcela.imovel, style: 'tableCell', fillColor: colors.headerBg },
           { text: formatarMoedaParaPDF(parcela.valorTotal), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg },
           { text: formatarMoedaParaPDF(parcela.valorPago), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg },
-          { text: formatarMoedaParaPDF(parcela.valorPendente), style: 'tableCell', alignment: 'right', color: colors.primary, bold: true, fillColor: colors.headerBg },
+          { text: formatarMoedaParaPDF(parcela.valorPendente), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg },
           { text: formatarDataParaPDF(parcela.proximoVencimento), style: 'tableCell', fillColor: colors.headerBg },
-          { text: parcela.diasEmAtraso.toString(), style: 'tableCell', alignment: 'right', color: atrasoColor, bold: parcela.diasEmAtraso > 0, fillColor: colors.headerBg }
+          { text: parcela.diasEmAtraso.toString(), style: 'tableCell', alignment: 'right', fillColor: colors.headerBg }
         ]);
       });
       
