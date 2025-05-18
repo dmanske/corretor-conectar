@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, Search, LayoutGrid, Table } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
+import { ClientCard } from "./ClientCard";
 
 function getInitials(nome: string) {
   if (!nome) return "?";
@@ -67,7 +68,7 @@ interface AniversariantesTableProps {
   pageSize?: number;
   total?: number;
   onPageChange?: (page: number) => void;
-  defaultViewMode?: 'table' | 'cards';
+  defaultViewMode?: 'cards' | 'list';
 }
 
 const AniversariantesTable: React.FC<AniversariantesTableProps> = ({
@@ -79,12 +80,12 @@ const AniversariantesTable: React.FC<AniversariantesTableProps> = ({
   pageSize = 10,
   total,
   onPageChange,
-  defaultViewMode = 'table',
+  defaultViewMode = 'cards',
 }) => {
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<AniversarianteTable | null>(null);
   const [customMessage, setCustomMessage] = useState("");
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>(defaultViewMode);
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>(defaultViewMode === 'cards' ? 'cards' : 'list');
 
   const filtered = useMemo(() => {
     if (!search) return aniversariantes;
@@ -120,10 +121,10 @@ const AniversariantesTable: React.FC<AniversariantesTableProps> = ({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-0 md:p-4">
+    <div className="w-full max-w-7xl mx-auto p-0 md:p-4">
       {/* Barra de busca */}
-      <div className="mb-4">
-        <div className="relative">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             type="text"
@@ -136,124 +137,122 @@ const AniversariantesTable: React.FC<AniversariantesTableProps> = ({
             }}
           />
         </div>
+        <div className="ml-4 flex gap-2">
+          <button
+            className={`p-2 rounded ${viewMode === 'cards' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+            onClick={() => setViewMode('cards')}
+            title="Visualizar em cards"
+          >
+            <span className="material-icons">Grade</span>
+          </button>
+          <button
+            className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+            onClick={() => setViewMode('list')}
+            title="Visualizar em lista"
+          >
+            <span className="material-icons">Lista</span>
+          </button>
+        </div>
       </div>
 
-      {/* Botão de alternância de visualização */}
-      <div className="flex justify-end mb-2">
-        <button
-          className={`mr-2 p-2 rounded ${viewMode === 'table' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}
-          onClick={() => setViewMode('table')}
-          title="Visualizar em tabela"
-        >
-          <Table className="w-5 h-5" />
-        </button>
-        <button
-          className={`p-2 rounded ${viewMode === 'cards' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'}`}
-          onClick={() => setViewMode('cards')}
-          title="Visualizar em cards"
-        >
-          <LayoutGrid className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Renderização condicional */}
-      {viewMode === 'table' ? (
-        <div className="rounded-lg overflow-hidden border border-gray-100">
-          {/* Cabeçalho */}
-          <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b text-sm font-medium text-gray-500">
-            <div className="col-span-2">Data</div>
-            <div className="col-span-5">Cliente</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-3">Ações</div>
-          </div>
-
-          {/* Lista */}
-          {loading ? (
-            <div className="py-8 text-center text-gray-500">Carregando...</div>
-          ) : paginated.length === 0 ? (
-            <div className="py-8 text-center text-gray-500">Nenhum aniversariante encontrado.</div>
-          ) : (
-            <div className="divide-y">
-              {paginated.map(aniversariante => (
-                <div key={aniversariante.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-3 md:px-6 py-4 hover:bg-gray-50 border-b last:border-b-0 items-center">
-                  {/* Data */}
-                  <div className="col-span-2 flex items-center">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-blue-600">{aniversariante.dataNascimento ? aniversariante.dataNascimento.split("-")[2] : "-"}</div>
-                      <div className="text-sm text-gray-500">{formatarMes(aniversariante.dataNascimento)}</div>
-                    </div>
+      {/* Visualização condicional */}
+      {viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-0 items-start w-full max-w-3xl">
+          {paginated.map((aniversariante) => {
+            // Extrair dia e mês
+            let dia = '-';
+            let mes = '-';
+            if (aniversariante.dataNascimento) {
+              const partes = aniversariante.dataNascimento.split('-');
+              if (partes.length === 3) {
+                dia = partes[2];
+                const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                mes = meses[parseInt(partes[1], 10) - 1];
+              }
+            }
+            return (
+              <div key={aniversariante.id} className="bg-white rounded-2xl shadow-2xl p-5 flex flex-col gap-4 items-center relative border border-gray-100 min-h-[160px] w-full transition-all">
+                {/* Selo Hoje! */}
+                {aniversariante.diasAte === 0 && (
+                  <span className="absolute top-4 right-4 bg-green-500 text-white px-5 py-1.5 rounded-b-xl text-base font-semibold shadow-lg z-10">Hoje!</span>
+                )}
+                {/* Avatar e nome */}
+                <div className="flex flex-col items-center w-full gap-1">
+                  <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold shadow mb-1">
+                    {getInitials(aniversariante.nome)}
                   </div>
-
-                  {/* Cliente */}
-                  <div className="col-span-5 flex items-center space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                      {getInitials(aniversariante.nome)}
-                    </div>
-                    <div>
-                      <div className="font-bold">{aniversariante.nome}</div>
-                      <div className="text-sm text-gray-500">
-                        <span>• Cliente desde: {formatarDataCurta(aniversariante.clienteDesde)}</span><br />
-                        <span>• Última compra: {formatarDataCurta(aniversariante.ultimaCompra)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status */}
-                  <div className="col-span-2 flex items-center">
-                    {getStatusTag(aniversariante.diasAte)}
-                  </div>
-
-                  {/* Ações */}
-                  <div className="col-span-3 flex items-center space-x-2 justify-end md:justify-start">
-                    <WhatsAppButton
-                      telefone={aniversariante.telefone}
-                      mensagem={`Olá ${aniversariante.nome}, feliz aniversário! 🎉`}
-                      size="sm"
-                    />
+                  <div className="text-xl font-extrabold text-gray-900 text-center leading-tight">{aniversariante.nome}</div>
+                  <div className="flex flex-col gap-0.5 mt-1 text-base text-gray-500 font-medium items-center">
+                    <span className="flex items-center gap-1"><span className="text-base">📅</span> Cliente desde: {formatarDataCurta(aniversariante.clienteDesde)}</span>
+                    <span className="flex items-center gap-1"><span className="text-base">💳</span> Última compra: {formatarDataCurta(aniversariante.ultimaCompra)}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+                {/* Data e status */}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-4xl font-extrabold text-blue-700 leading-none">{dia}</span>
+                  <span className="text-lg text-gray-700 font-semibold">{mes}</span>
+                  {aniversariante.diasAte === 0 && (
+                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-base font-semibold ml-1">Hoje!</span>
+                  )}
+                </div>
+                {/* Botão WhatsApp */}
+                <div className="mt-2 w-full flex justify-center">
+                  <button
+                    onClick={() => window.open(`https://wa.me/55${aniversariante.telefone.replace(/\D/g, '')}`)}
+                    className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-lg font-medium px-6 py-2 rounded-xl shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-green-400"
+                  >
+                    <span className="text-2xl">📱</span> WhatsApp
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {paginated.map((aniversariante, idx) => (
-            <div
-              key={aniversariante.id}
-              className={`rounded-2xl shadow-lg p-5 flex flex-col gap-3 border border-gray-100 hover:shadow-xl transition-all min-h-[180px] bg-gradient-to-br ${
-                idx % 4 === 0 ? 'from-blue-100 via-blue-50 to-white' :
-                idx % 4 === 1 ? 'from-green-100 via-green-50 to-white' :
-                idx % 4 === 2 ? 'from-purple-100 via-purple-50 to-white' :
-                'from-yellow-100 via-yellow-50 to-white'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+        <div className="divide-y divide-gray-200 bg-white rounded-xl shadow-md mt-2">
+          {paginated.map((aniversariante) => {
+            let dia = '-';
+            let mes = '-';
+            if (aniversariante.dataNascimento) {
+              const partes = aniversariante.dataNascimento.split('-');
+              if (partes.length === 3) {
+                dia = partes[2];
+                const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                mes = meses[parseInt(partes[1], 10) - 1];
+              }
+            }
+            return (
+              <div key={aniversariante.id} className="flex items-center gap-4 px-6 py-4">
+                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
                   {getInitials(aniversariante.nome)}
                 </div>
-                <div>
-                  <div className="font-bold text-lg">{aniversariante.nome}</div>
-                  <div className="text-sm text-gray-500">
-                    <span>• Cliente desde: {formatarDataCurta(aniversariante.clienteDesde)}</span><br />
-                    <span>• Última compra: {formatarDataCurta(aniversariante.ultimaCompra)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg text-gray-900 truncate">{aniversariante.nome}</span>
+                    {aniversariante.diasAte === 0 && (
+                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold ml-2">Hoje!</span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-500 flex gap-2 flex-wrap">
+                    <span className="flex items-center gap-1"><span className="text-base">📅</span> {formatarDataCurta(aniversariante.clienteDesde)}</span>
+                    <span className="flex items-center gap-1"><span className="text-base">💳</span> {formatarDataCurta(aniversariante.ultimaCompra)}</span>
                   </div>
                 </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-1">
+                    <span className="text-2xl font-extrabold text-blue-700">{dia}</span>
+                    <span className="text-base text-gray-700 font-semibold">{mes}</span>
+                  </div>
+                  <button
+                    onClick={() => window.open(`https://wa.me/55${aniversariante.telefone.replace(/\D/g, '')}`)}
+                    className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white text-base font-medium px-4 py-1 rounded-lg shadow transition-all focus:outline-none focus:ring-2 focus:ring-green-400 mt-1"
+                  >
+                    <span className="text-xl">📱</span> WhatsApp
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="text-2xl font-bold text-blue-600">{aniversariante.dataNascimento ? aniversariante.dataNascimento.split("-")[2] : "-"}</div>
-                <div className="text-base text-gray-500">{formatarMes(aniversariante.dataNascimento)}</div>
-                <div>{getStatusTag(aniversariante.diasAte)}</div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <WhatsAppButton
-                  telefone={aniversariante.telefone}
-                  mensagem={`Olá ${aniversariante.nome}, feliz aniversário! 🎉`}
-                  size="sm"
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

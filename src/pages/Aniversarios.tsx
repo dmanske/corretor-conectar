@@ -21,7 +21,7 @@ import { useVendas } from "@/hooks/useVendas";
 
 const Aniversarios = () => {
   const { toast } = useToast();
-  const [tab, setTab] = useState("semana");
+  const [tab, setTab] = useState("hoje");
   const [mesAtual, setMesAtual] = useState(new Date());
   const { clientes } = useClientes();
   const { vendas } = useVendas ? useVendas() : { vendas: [] };
@@ -164,22 +164,47 @@ const Aniversarios = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col items-center w-full">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Aniversários</h2>
           <p className="text-slate-500">Gerencie os aniversários dos seus clientes e envie mensagens personalizadas.</p>
         </div>
+        {/* Filtros customizados */}
+        <div className="flex flex-wrap justify-center gap-4 mt-6 mb-2 w-full">
+          <button
+            className={`px-6 py-3 rounded-2xl text-lg font-semibold shadow transition-all border-2 ${tab === 'hoje' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+            onClick={() => setTab('hoje')}
+          >
+            Em aniversário
+          </button>
+          <button
+            className={`px-6 py-3 rounded-2xl text-lg font-semibold shadow transition-all border-2 ${tab === 'semana' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+            onClick={() => setTab('semana')}
+          >
+            Próximos 7 dias
+          </button>
+          <button
+            className={`px-6 py-3 rounded-2xl text-lg font-semibold shadow transition-all border-2 ${tab === 'mes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+            onClick={() => setTab('mes')}
+          >
+            Próximos 30 dias
+          </button>
+          <button
+            className={`px-6 py-3 rounded-2xl text-lg font-semibold shadow transition-all border-2 ${tab === 'porMes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+            onClick={() => setTab('porMes')}
+          >
+            Separados por Mês
+          </button>
+          <button
+            className={`px-6 py-3 rounded-2xl text-lg font-semibold shadow transition-all border-2 ${tab === 'todos' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+            onClick={() => setTab('todos')}
+          >
+            Todos
+          </button>
+        </div>
       </div>
 
       <Tabs defaultValue="semana" value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="hoje">Em aniversário</TabsTrigger>
-          <TabsTrigger value="semana">Próximos 7 dias</TabsTrigger>
-          <TabsTrigger value="mes">Próximos 30 dias</TabsTrigger>
-          <TabsTrigger value="porMes">Separados por Mês</TabsTrigger>
-          <TabsTrigger value="todos">Todos</TabsTrigger>
-        </TabsList>
-
         <TabsContent value="hoje" className="space-y-4">
           <div className="my-4">
             <div className="flex items-center gap-3 bg-blue-50 text-blue-800 rounded-xl px-6 py-4 font-medium shadow-sm">
@@ -292,7 +317,7 @@ const Aniversarios = () => {
                   pageSize={10}
                   total={aniversariantesMesAtual.length}
                   onPageChange={() => {}}
-                  defaultViewMode="table"
+                  defaultViewMode="list"
                 />
               </div>
             </div>
@@ -336,7 +361,7 @@ const Aniversarios = () => {
                 pageSize={50}
                 total={clientes.filter(c => c.dataNascimento).length}
                 onPageChange={() => {}}
-                defaultViewMode="table"
+                defaultViewMode="list"
               />
             </div>
           </div>
