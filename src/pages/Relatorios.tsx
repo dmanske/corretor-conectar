@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,16 @@ const Relatorios = () => {
   const { vendas, formatarMoeda } = useVendas();
   const { comissoes, calcularTotais, exportarParaPDF, exportarParaExcel } = useComissoes();
   const { clientes } = useClientes();
+  
+  // Função para formatar data
+  const formatarData = (data: string): string => {
+    if (!data) return "";
+    const partes = data.split("-");
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    return data;
+  };
   
   // Adicionar estados para período personalizado
   const [dataInicio, setDataInicio] = useState("");
@@ -197,10 +206,9 @@ const Relatorios = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex justify-center items-center h-80">
-                <div className="text-center text-slate-500">
+                <div className="text-center">
                   <p>Total de vendas: {dadosVendas.total}</p>
                   <p>Valor total: {formatarMoeda(dadosVendas.valorTotal)}</p>
-                  <p className="text-sm mt-2 text-slate-400">Em uma implementação completa, utilizaríamos o componente recharts.</p>
                 </div>
               </CardContent>
             </Card>
@@ -239,7 +247,7 @@ const Relatorios = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Histórico de Vendas</CardTitle>
+              <CardTitle>Detalhamento de Vendas</CardTitle>
             </CardHeader>
             <CardContent>
               {vendas.length > 0 ? (
@@ -251,15 +259,21 @@ const Relatorios = () => {
                         <th className="text-left py-2 px-4 border-b">Cliente</th>
                         <th className="text-left py-2 px-4 border-b">Imóvel</th>
                         <th className="text-left py-2 px-4 border-b">Valor</th>
+                        <th className="text-left py-2 px-4 border-b">Tipo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {vendas.map(venda => (
                         <tr key={venda.id} className="hover:bg-slate-50">
-                          <td className="py-2 px-4 border-b">{new Date(venda.dataVenda).toLocaleDateString('pt-BR')}</td>
+                          <td className="py-2 px-4 border-b">{formatarData(venda.dataVenda)}</td>
                           <td className="py-2 px-4 border-b">{venda.clienteNome}</td>
-                          <td className="py-2 px-4 border-b">{venda.tipoImovel} - {venda.endereco}</td>
-                          <td className="py-2 px-4 border-b">{formatarMoeda(venda.valor)}</td>
+                          <td className="py-2 px-4 border-b">{venda.endereco}</td>
+                          <td className="py-2 px-4 border-b text-blue-600 font-semibold">{formatarMoeda(venda.valor)}</td>
+                          <td className="py-2 px-4 border-b">
+                            <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                              {venda.tipoImovel}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
