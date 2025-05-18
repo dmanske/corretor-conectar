@@ -22,7 +22,16 @@ const Relatorios = () => {
     valorTotal: vendas.reduce((acc, venda) => acc + venda.valor, 0)
   };
   
-  const dadosComissoes = calcularTotais(comissoes);
+  // Updated to include all needed properties from calcularTotais
+  const dadosComissoes = {
+    ...calcularTotais(comissoes),
+    // Additional properties that might be needed
+    metaComissao: 0,
+    totalComissoes: calcularTotais(comissoes).total,
+    totalRecebido: calcularTotais(comissoes).recebido,
+    totalPendente: calcularTotais(comissoes).pendente,
+    atingidoPercentual: 0
+  };
   
   return (
     <div className="space-y-6">

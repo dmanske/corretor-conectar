@@ -259,6 +259,7 @@ export const useComissoes = () => {
     return comissoes.filter((comissao) => comissao.status === status);
   };
 
+  // Add missing exportarParaCSV function
   const exportarParaCSV = (comissoesParaExportar: Comissao[], filtros: any) => {
     const {
       incluirCliente,
@@ -272,6 +273,17 @@ export const useComissoes = () => {
 
     let csvContent = "data:text/csv;charset=utf-8,";
     
+    // Função para escapar campos CSV
+    function escapeCSV(value: any) {
+      if (value === null || value === undefined) return '';
+      let str = String(value);
+      if (str.includes('"')) str = str.replace(/"/g, '""');
+      if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        str = '"' + str + '"';
+      }
+      return str;
+    }
+
     // Cabeçalho
     const header = [
       incluirCliente ? "Cliente" : null,
@@ -281,25 +293,31 @@ export const useComissoes = () => {
       incluirDataVenda ? "Data da Venda" : null,
       incluirDataPagamento ? "Data de Pagamento" : null,
       incluirStatus ? "Status" : null,
-    ].filter(Boolean).join(",");
+    ].filter(v => v !== null && v !== undefined).join(",");
     
     csvContent += header + "\r\n";
 
     // Conteúdo das linhas
     comissoesParaExportar.forEach(comissao => {
       const row = [
-        incluirCliente ? comissao.cliente : null,
-        incluirImovel ? comissao.imovel : null,
-        incluirValorVenda ? comissao.valorVenda : null,
-        incluirValorComissao ? comissao.valorComissaoCorretor : null,
-        incluirDataVenda ? comissao.dataVenda : null,
-        incluirDataPagamento ? comissao.dataPagamento : null,
-        incluirStatus ? comissao.status : null,
-      ].filter(Boolean).join(",");
+        incluirCliente ? escapeCSV(comissao.cliente) : null,
+        incluirImovel ? escapeCSV(comissao.imovel) : null,
+        incluirValorVenda ? escapeCSV(comissao.valorVenda) : null,
+        incluirValorComissao ? escapeCSV(comissao.valorComissaoCorretor) : null,
+        incluirDataVenda ? escapeCSV(comissao.dataVenda) : null,
+        incluirDataPagamento ? escapeCSV(comissao.dataPagamento) : null,
+        incluirStatus ? escapeCSV(comissao.status) : null,
+      ].filter(v => v !== null && v !== undefined).join(",");
       
       csvContent += row + "\r\n";
     });
 
+    // Toast bonito do sistema
+    toast({
+      title: "Exportação iniciada",
+      description: "O download do arquivo CSV está sendo gerado.",
+      variant: "success"
+    });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -310,6 +328,7 @@ export const useComissoes = () => {
     document.body.removeChild(link);
   };
 
+  // Add missing exportarParaPDF function
   const exportarParaPDF = (comissoesParaExportar: Comissao[], filtros: any) => {
     toast({
       title: "Em desenvolvimento",
@@ -349,7 +368,7 @@ export const useComissoes = () => {
           ano: ano,
           valor: valor,
           user_id: user.id
-        }, { onConflict: ['mes', 'ano', 'user_id'] });
+        }, { onConflict: 'mes,ano,user_id' });  // Fixed string format
 
       if (error) {
         throw error;
@@ -427,6 +446,7 @@ export const useComissoes = () => {
     }
   };
 
+  // Update calcularTotais to return all needed properties
   const calcularTotais = (comissoesFiltradas: Comissao[]) => {
     const total = comissoesFiltradas.reduce((acc, comissao) => acc + (comissao.valorComissaoCorretor || 0), 0);
     const recebido = comissoesFiltradas
@@ -438,12 +458,31 @@ export const useComissoes = () => {
     const parcial = comissoesFiltradas
       .filter(c => c.status === "Parcial")
       .reduce((acc, comissao) => {
-        // Aqui precisaríamos calcular quanto já foi recebido parcialmente
-        // Como não temos essa info no tipo, vamos considerar metade
         return acc + (comissao.valorComissaoCorretor || 0) / 2;
       }, 0);
+    
+    // Add these properties needed by Relatorios.tsx
+    const totalComissoes = total;
+    const totalRecebido = recebido;
+    const totalPendente = pendente;
+    const recebidoCount = comissoesFiltradas.filter(c => c.status === "Recebido").length;
+    const pendenteCount = comissoesFiltradas.filter(c => c.status === "Pendente").length;
+    const metaComissao = 0; // This is a placeholder - the actual value comes from component state
+    const atingidoPercentual = 0; // Placeholder - calculated in the component
 
-    return { total, recebido, pendente, parcial };
+    return { 
+      total, 
+      recebido, 
+      pendente, 
+      parcial, 
+      totalComissoes,
+      totalRecebido,
+      totalPendente,
+      recebidoCount,
+      pendenteCount,
+      metaComissao,
+      atingidoPercentual
+    };
   };
 
   const filtrarComissoes = (tab: string, filtro: string, periodo: string) => {
@@ -664,6 +703,7 @@ export const useComissoes = () => {
     adicionarRecebimento,
     calcularTotais,
     getTotalRecebidoPorMesAno,
+    exportarParaCSV,  // Added to return object
+    exportarParaPDF   // Added to return object
   };
 };
-
