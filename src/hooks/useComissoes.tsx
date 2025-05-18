@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,9 @@ export interface Comissao {
 export const useComissoes = () => {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [metaComissao, setMetaComissao] = useState<number>(0);
+  const [mesAtual, setMesAtual] = useState(new Date().getMonth() + 1);
+  const [anoAtual, setAnoAtual] = useState(new Date().getFullYear());
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -87,6 +90,25 @@ export const useComissoes = () => {
 
     fetchComissoes();
   }, [user, toast]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchMeta = async () => {
+      const { data, error } = await supabase
+        .from('metas')
+        .select('valor')
+        .eq('mes', mesAtual)
+        .eq('ano', anoAtual)
+        .eq('user_id', user.id)
+        .single();
+      if (!error && data && typeof data.valor === 'number') {
+        setMetaComissao(data.valor);
+      } else {
+        setMetaComissao(0);
+      }
+    };
+    fetchMeta();
+  }, [mesAtual, anoAtual, user]);
 
   const adicionarComissao = async (comissao: Omit<Comissao, "id" | "createdAt" | "updatedAt">) => {
     if (!user) return null;
@@ -424,22 +446,194 @@ export const useComissoes = () => {
     return { total, recebido, pendente, parcial };
   };
 
+  const filtrarComissoes = (tab: string, filtro: string, periodo: string) => {
+    let comissoesFiltradas = [...comissoes];
+
+    // Filtra por status (tab)
+    if (tab !== "todas") {
+      comissoesFiltradas = comissoesFiltradas.filter(
+        (comissao) => comissao.status === tab
+      );
+    }
+
+    // Filtra por texto (filtro)
+    if (filtro) {
+      const filtroLower = filtro.toLowerCase();
+      comissoesFiltradas = comissoesFiltradas.filter(
+        (comissao) =>
+          comissao.cliente.toLowerCase().includes(filtroLower) ||
+          comissao.imovel.toLowerCase().includes(filtroLower)
+      );
+    }
+
+    // Filtra por período
+    if (periodo !== "todos") {
+      const hoje = new Date();
+      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+
+      comissoesFiltradas = comissoesFiltradas.filter((comissao) => {
+        const dataVenda = new Date(comissao.dataVenda);
+        return dataVenda >= inicioMes && dataVenda <= fimMes;
+      });
+    }
+
+    return comissoesFiltradas;
+  };
+
+  const alterarPeriodoAtual = (mes: number, ano: number) => {
+    setMesAtual(mes);
+    setAnoAtual(ano);
+  };
+
+  const marcarComoPago = async (id: string) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from("comissoes")
+        .update({
+          status: "Recebido",
+          data_pagamento: new Date().toISOString()
+        })
+        .eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+
+      setComissoes(
+        comissoes.map((comissao) =>
+          comissao.id === id
+            ? {
+                ...comissao,
+                status: "Recebido",
+                dataPagamento: new Date().toISOString(),
+              }
+            : comissao
+        )
+      );
+      return true;
+    } catch (error) {
+      console.error("Erro ao marcar comissão como paga:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao marcar comissão como paga",
+        description: "Não foi possível marcar a comissão como paga.",
+      });
+      return false;
+    }
+  };
+
+  const atualizarMeta = async (valor: number, mes: number, ano: number) => {
+    if (!user) return false;
+
+    try {
+      // Busca se já existe meta para o mês/ano/usuário
+      const { data: existingMeta, error: fetchError } = await supabase
+        .from('metas')
+        .select('*')
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (existingMeta) {
+        // Atualiza a meta existente
+        const { error } = await supabase
+          .from('metas')
+          .update({ valor })
+          .eq('id', existingMeta.id);
+        if (error) throw error;
+      } else {
+        // Insere nova meta
+        const { error } = await supabase
+          .from('metas')
+          .insert({
+            mes,
+            ano,
+            valor,
+            user_id: user.id
+          });
+        if (error) throw error;
+      }
+
+      // Busca novamente para garantir o valor correto
+      const { data, error: fetchAgainError } = await supabase
+        .from('metas')
+        .select('valor')
+        .eq('mes', mes)
+        .eq('ano', ano)
+        .eq('user_id', user.id)
+        .single();
+      if (!fetchAgainError && data && typeof data.valor === 'number') {
+        setMetaComissao(data.valor);
+      } else {
+        setMetaComissao(0);
+      }
+
+      toast({
+        title: "Meta de venda atualizada",
+        description: `A meta de venda para ${mes}/${ano} foi atualizada com sucesso.`,
+        variant: "success"
+      });
+      return true;
+    } catch (error) {
+      console.error("Erro ao atualizar meta:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao definir meta de venda",
+        description: "Não foi possível definir a meta mensal de venda.",
+      });
+      return false;
+    }
+  };
+
+  const totais = useMemo(() => {
+    const comissoesFiltradas = filtrarComissoes("todas", "", "todos");
+    const totalComissoes = comissoesFiltradas.reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
+    const totalPendente = comissoesFiltradas
+      .filter(c => c.status === "Pendente")
+      .reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
+    const totalRecebido = comissoesFiltradas
+      .filter(c => c.status === "Recebido")
+      .reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
+    const totalCount = comissoesFiltradas.length;
+    const recebidoCount = comissoesFiltradas.filter(c => c.status === "Recebido").length;
+    const pendenteCount = comissoesFiltradas.filter(c => c.status === "Pendente").length;
+    const atingidoPercentual = metaComissao > 0 ? (totalRecebido / metaComissao) * 100 : 0;
+
+    return {
+      totalComissoes,
+      totalPendente,
+      totalRecebido,
+      totalCount,
+      recebidoCount,
+      pendenteCount,
+      atingidoPercentual
+    };
+  }, [comissoes, metaComissao]);
+
   return {
     comissoes,
+    metaComissao,
     isLoading,
     adicionarComissao,
     atualizarComissao,
+    marcarComoPago,
     excluirComissao,
-    getComissaoById,
-    getComissoesByVendaId,
-    getComissoesByStatus,
-    exportarParaCSV,
-    exportarParaPDF,
-    getMetaMensal,
-    adicionarMetaMensal,
+    atualizarMeta,
+    filtrarComissoes,
+    totais,
+    mesAtual,
+    anoAtual,
+    alterarPeriodoAtual,
     obterNomeMes,
     getRecebimentosByComissaoId,
     adicionarRecebimento,
     calcularTotais,
   };
 };
+

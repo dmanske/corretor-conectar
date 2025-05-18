@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DollarSign, CreditCard, Calendar } from "lucide-react";
 import { FormatCurrency } from "./FormatComponents";
@@ -12,6 +11,7 @@ interface ComissoesSummaryProps {
   pendenteCount: number;
   metaComissao: number;
   atingidoPercentual: number;
+  labelMeta?: string;
 }
 
 const ComissoesSummary = ({
@@ -22,7 +22,8 @@ const ComissoesSummary = ({
   totalPendente,
   pendenteCount,
   metaComissao,
-  atingidoPercentual
+  atingidoPercentual,
+  labelMeta = "Meta de venda"
 }: ComissoesSummaryProps) => {
   return (
     <div className="grid gap-4 md:grid-cols-5">
@@ -77,7 +78,7 @@ const ComissoesSummary = ({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">
-            Meta
+            {labelMeta}
           </CardTitle>
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
@@ -86,7 +87,7 @@ const ComissoesSummary = ({
             <FormatCurrency value={metaComissao} />
           </div>
           <p className="text-xs text-muted-foreground">
-            Meta de comissões
+            Meta de vendas
           </p>
         </CardContent>
       </Card>
