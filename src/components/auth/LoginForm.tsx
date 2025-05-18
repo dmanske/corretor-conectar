@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -8,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { FcGoogle } from "react-icons/fc";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -19,6 +21,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const LoginForm = () => {
   const { login, loginWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -35,6 +38,16 @@ const LoginForm = () => {
       await login(data.email, data.password);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      await loginWithGoogle();
+    } finally {
+      // O estado permanecerá carregando durante o redirecionamento
+      // Não resetamos setIsGoogleLoading pois o usuário será redirecionado
     }
   };
 
@@ -71,19 +84,41 @@ const LoginForm = () => {
           />
           
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Entrando..." : "Entrar"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              "Entrar"
+            )}
           </Button>
         </form>
       </Form>
-      <button
+      
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-slate-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-2 text-slate-500">ou continue com</span>
+        </div>
+      </div>
+      
+      <Button
+        variant="outline"
         type="button"
-        onClick={loginWithGoogle}
-        className="w-full flex items-center justify-center gap-3 mt-4 bg-white border border-slate-200 shadow-sm rounded-xl py-3 text-base font-medium text-slate-800 hover:bg-slate-50 transition"
-        style={{ fontFamily: 'inherit' }}
+        onClick={handleGoogleLogin}
+        disabled={isGoogleLoading}
+        className="w-full flex items-center justify-center gap-2"
       >
-        <FcGoogle size={24} />
-        Entrar com Google
-      </button>
+        {isGoogleLoading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <FcGoogle size={20} />
+        )}
+        {isGoogleLoading ? "Redirecionando..." : "Entrar com Google"}
+      </Button>
     </TabsContent>
   );
 };
