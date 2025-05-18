@@ -44,6 +44,7 @@ export const useMetaComissoes = (
   };
 
   // Function to get total received by month/year
+  // Fixing this line: removing the userId parameter since it's not expected by getTotalPorMesAno
   const getTotalRecebidoPorMesAno = async (mes: number, ano: number) => {
     return await getTotalPorMesAno(mes, ano);
   };
