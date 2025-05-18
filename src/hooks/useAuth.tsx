@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
@@ -59,6 +58,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }, 0);
         } else if (event === 'SIGNED_OUT') {
           console.log("Usuário deslogado");
+          // Limpar o estado local
+          setSession(null);
+          setUser(null);
+          setIsAuthenticated(false);
           // Use replace to prevent back button from going back to protected routes
           navigate("/auth", { replace: true });
         }
@@ -177,9 +180,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut();
+      // 1. Limpar estado local
+      setSession(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // 2. Limpar apenas os dados do Supabase do localStorage
+      const supabaseKeys = Object.keys(localStorage).filter(key => 
+        key.startsWith('sb-') || 
+        key.includes('supabase') || 
+        key.includes('supa')
+      );
+      supabaseKeys.forEach(key => localStorage.removeItem(key));
+      
+      // 3. Tentar fazer o logout no Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Logout error:", error);
+        // Mesmo com erro, continuamos com o processo
+      }
+      
+      // 4. Redirecionar para a página de auth
+      window.location.replace('/auth');
+      
     } catch (error) {
       console.error("Logout error:", error);
+      // Mesmo com erro, forçar redirecionamento
+      window.location.replace('/auth');
     }
   };
 
@@ -187,13 +215,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Get the absolute URL for redirection
       const origin = window.location.origin;
-      
-      // Clean up the redirectTo URL - no double hashes, no trailing slashes
-      // For HashRouter, we need to use the format: origin/#/
-      const redirectTo = `${origin}/#`;
-      
+      // Para HashRouter, o correto é usar /#/
+      const redirectTo = `${origin}/#/`;
       console.log("Redirecionando para login com Google com URL:", redirectTo);
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -204,7 +228,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       });
-
       if (error) {
         console.error("Google login error:", error);
         toast({

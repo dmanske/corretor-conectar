@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { 
@@ -21,8 +20,7 @@ const Layout = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  const handleLogout = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent any default action
+  const handleLogout = () => {
     logout();
   };
 
@@ -64,7 +62,11 @@ const Layout = () => {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={handleLogout}
+              onClick={() => {
+                logout();
+                const button = document.activeElement as HTMLButtonElement;
+                if (button) button.disabled = true;
+              }}
               title="Sair"
             >
               <LogOut className="h-5 w-5" />
