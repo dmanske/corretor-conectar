@@ -438,7 +438,7 @@ const ClienteCard = ({
   formatarTelefone: (telefone: string) => string;
   formatarMoeda: (valor: number) => string;
   formatarData: (data: string) => string;
-  atualizarVenda: (id: string, dados: Partial<any>) => Promise<void>;
+  atualizarVenda: (id: string, dados: Partial<any>) => Promise<boolean>; // Updated to match useVendas return type
   onEditar: () => void;
   onExcluir: () => void;
   onExcluirVenda: (vendaId: string) => void;
@@ -512,14 +512,17 @@ const ClienteCard = ({
   const salvarEdicaoVenda = async () => {
     if (!vendaEditando) return;
     setSalvandoVenda(true);
-    await atualizarVenda(vendaEditando.id, formVenda);
+    const result = await atualizarVenda(vendaEditando.id, formVenda);
     setSalvandoVenda(false);
     setVendaEditando(null);
-    toast({
-      title: "Venda atualizada",
-      description: "Os dados da venda foram atualizados.",
-      variant: "success"
-    });
+    
+    if (result) {
+      toast({
+        title: "Venda atualizada",
+        description: "Os dados da venda foram atualizados.",
+        variant: "success"
+      });
+    }
   };
 
   return (
