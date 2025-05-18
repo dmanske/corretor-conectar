@@ -21,12 +21,14 @@ const AuthContainer = ({
   showTabs = true
 }: AuthContainerProps) => {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">{title}</CardTitle>
-          <CardDescription className="text-center">{description}</CardDescription>
-        </CardHeader>
+    <div className={`flex items-center justify-center ${showTabs ? 'px-4' : ''}`}>
+      <Card className={`w-full ${showTabs ? 'max-w-md' : ''} shadow-xl`}>
+        {(title || description) && (
+          <CardHeader className="space-y-1">
+            {title && <CardTitle className="text-2xl font-bold text-center">{title}</CardTitle>}
+            {description && <CardDescription className="text-center">{description}</CardDescription>}
+          </CardHeader>
+        )}
         
         {showTabs ? (
           <Tabs defaultValue={defaultTab} className="w-full">
@@ -37,7 +39,9 @@ const AuthContainer = ({
             {children}
           </Tabs>
         ) : (
-          <CardContent>{children}</CardContent>
+          <CardContent className={title || description ? '' : 'pt-0'}>
+            {children}
+          </CardContent>
         )}
         
         {footer && <CardFooter>{footer}</CardFooter>}

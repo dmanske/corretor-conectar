@@ -6,10 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { FcGoogle } from "react-icons/fc";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock, Eye, EyeOff, LogIn } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -22,6 +21,7 @@ const LoginForm = () => {
   const { login, loginWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -53,8 +53,17 @@ const LoginForm = () => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <TabsContent value="login" className="p-4 pt-0">
+    <div>
+      <div className="text-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Entrar</h2>
+        <p className="text-sm text-gray-600 mt-1">Entre com suas credenciais para acessar</p>
+      </div>
+      
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -62,10 +71,17 @@ const LoginForm = () => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="seu@email.com" {...field} />
-                </FormControl>
+                <FormLabel className="text-gray-700">Email</FormLabel>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <FormControl>
+                    <Input 
+                      placeholder="seu@email.com" 
+                      className="pl-10" 
+                      {...field} 
+                    />
+                  </FormControl>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -76,34 +92,69 @@ const LoginForm = () => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Senha</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="******" {...field} />
-                </FormControl>
+                <FormLabel className="text-gray-700">Senha</FormLabel>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                  <FormControl>
+                    <Input 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="••••••" 
+                      className="pl-10" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <button 
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={togglePasswordVisibility}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
           
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Esqueceu a senha?
+            </button>
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full bg-blue-600 hover:bg-blue-700 transition-colors" 
+            disabled={isLoading}
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Entrando...
               </>
             ) : (
-              "Entrar"
+              <>
+                <LogIn className="mr-2 h-4 w-4" />
+                Entrar
+              </>
             )}
           </Button>
         </form>
       </Form>
       
-      <div className="relative my-4">
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-200" />
+          <span className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-2 text-slate-500">ou continue com</span>
+          <span className="bg-white px-2 text-gray-500">ou continue com</span>
         </div>
       </div>
       
@@ -112,7 +163,7 @@ const LoginForm = () => {
         type="button"
         onClick={handleGoogleLogin}
         disabled={isGoogleLoading}
-        className="w-full flex items-center justify-center gap-2"
+        className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50"
       >
         {isGoogleLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -121,7 +172,20 @@ const LoginForm = () => {
         )}
         {isGoogleLoading ? "Redirecionando..." : "Entrar com Google"}
       </Button>
-    </TabsContent>
+      
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Não possui uma conta?{" "}
+          <button
+            type="button"
+            className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+            onClick={() => document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="register"]')?.click()}
+          >
+            Cadastre-se
+          </button>
+        </p>
+      </div>
+    </div>
   );
 };
 
