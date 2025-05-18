@@ -38,13 +38,13 @@ export const useMetaComissoes = (
     return success;
   };
 
-  // Function to get meta mensal
+  // Function to get meta mensal - fixing the parameter issue
   const getMetaMensal = async (mes: number, ano: number) => {
-    return await getMeta(mes, ano, userId);
+    // The meta.service getMeta function only expects mes and ano, not userId
+    return await getMeta(mes, ano);
   };
 
   // Function to get total received by month/year
-  // Fixing this line: removing the userId parameter since it's not expected by getTotalPorMesAno
   const getTotalRecebidoPorMesAno = async (mes: number, ano: number) => {
     return await getTotalPorMesAno(mes, ano);
   };
