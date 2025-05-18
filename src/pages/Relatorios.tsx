@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,7 @@ const Relatorios = () => {
   const { toast } = useToast();
   const [periodo, setPeriodo] = useState("mes");
   const { vendas, formatarMoeda } = useVendas();
-  const { comissoes, calcularTotais } = useComissoes();
+  const { comissoes, calcularTotais, exportarParaPDF } = useComissoes();
   const { clientes } = useClientes();
   
   // Dados calculados para relatórios
@@ -33,6 +32,54 @@ const Relatorios = () => {
     atingidoPercentual: 0
   };
   
+  const handleExportPDF = () => {
+    const tipoAtual = tabSelecionada === "comissoes" ? "comissões" : 
+                      tabSelecionada === "vendas" ? "vendas" : 
+                      tabSelecionada === "clientes" ? "clientes" : "metas";
+                      
+    try {
+      if (tabSelecionada === "comissoes") {
+        const filtros = {
+          incluirCliente: true,
+          incluirImovel: true,
+          incluirValorVenda: true,
+          incluirValorComissao: true,
+          incluirDataVenda: true,
+          incluirDataPagamento: true,
+          incluirStatus: true,
+          periodo: periodo
+        };
+        
+        exportarParaPDF(comissoes, filtros);
+      } else {
+        toast({
+          title: "Funcionalidade em desenvolvimento",
+          description: `A exportação de relatórios de ${tipoAtual} será disponibilizada em breve.`,
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao exportar PDF:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro na exportação",
+        description: "Não foi possível gerar o relatório em PDF."
+      });
+    }
+  };
+  
+  const handleExportExcel = () => {
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A exportação para Excel será disponibilizada em breve.",
+    });
+  };
+  
+  // Controle da tab selecionada
+  const [tabSelecionada, setTabSelecionada] = useState("vendas");
+  const handleTabChange = (value: string) => {
+    setTabSelecionada(value);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -41,18 +88,18 @@ const Relatorios = () => {
           <p className="text-slate-500">Visualize os relatórios detalhados de vendas e comissões.</p>
         </div>
         <div className="flex space-x-3">
-          <Button>
+          <Button onClick={handleExportPDF}>
             <FileText className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportExcel}>
             <Download className="mr-2 h-4 w-4" />
             Exportar Excel
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="vendas" className="space-y-4">
+      <Tabs defaultValue="vendas" className="space-y-4" onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="vendas">Vendas</TabsTrigger>
           <TabsTrigger value="comissoes">Comissões</TabsTrigger>

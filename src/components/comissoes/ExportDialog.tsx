@@ -39,6 +39,8 @@ const ExportDialog = ({
     dataFim: "",
   });
 
+  const [temaRelatorio, setTemaRelatorio] = useState("roxo");
+
   const handleExportar = () => {
     if (comissoesParaExportar.length === 0) {
       toast({
@@ -53,7 +55,8 @@ const ExportDialog = ({
       if (formatoExportacao === "csv") {
         exportarParaCSV(comissoesParaExportar, filtros);
       } else {
-        exportarParaPDF(comissoesParaExportar, filtros);
+        // Adicionando tema do relatório aos filtros
+        exportarParaPDF(comissoesParaExportar, { ...filtros, tema: temaRelatorio });
       }
       onOpenChange(false);
     } catch (error) {
@@ -84,10 +87,11 @@ const ExportDialog = ({
         </DialogHeader>
         
         <Tabs defaultValue="formato" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
+          <TabsList className="grid grid-cols-4 mb-4">
             <TabsTrigger value="formato">Formato</TabsTrigger>
             <TabsTrigger value="campos">Campos</TabsTrigger>
             <TabsTrigger value="periodo">Período</TabsTrigger>
+            <TabsTrigger value="aparencia" disabled={formatoExportacao === "csv"}>Aparência</TabsTrigger>
           </TabsList>
           
           <TabsContent value="formato">
@@ -111,12 +115,17 @@ const ExportDialog = ({
               </div>
             </div>
             
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-4 flex items-start">
+            <div className={`bg-amber-50 border border-amber-200 rounded-md p-3 mt-4 flex items-start ${formatoExportacao === "pdf" ? "hidden" : ""}`}>
               <div className="text-amber-600 mr-2 mt-0.5">⚠️</div>
               <div className="text-sm text-amber-800">
-                {formatoExportacao === "pdf" ? 
-                  "A exportação para PDF está em desenvolvimento e será disponibilizada em breve." :
-                  `Serão exportadas ${comissoesParaExportar.length} comissões no formato CSV.`}
+                {`Serão exportadas ${comissoesParaExportar.length} comissões no formato CSV.`}
+              </div>
+            </div>
+
+            <div className={`bg-violet-50 border border-violet-200 rounded-md p-3 mt-4 flex items-start ${formatoExportacao === "csv" ? "hidden" : ""}`}>
+              <div className="text-violet-600 mr-2 mt-0.5">📄</div>
+              <div className="text-sm text-violet-800">
+                Seu relatório em PDF será formatado com cores modernas e layout profissional para impressão ou compartilhamento.
               </div>
             </div>
           </TabsContent>
@@ -231,13 +240,75 @@ const ExportDialog = ({
               </div>
             )}
           </TabsContent>
+          
+          <TabsContent value="aparencia" className="space-y-4">
+            <div>
+              <Label htmlFor="tema">Tema do Relatório</Label>
+              <div className="grid grid-cols-3 gap-3 mt-2">
+                <div 
+                  className={`relative border rounded-lg p-4 cursor-pointer ${temaRelatorio === "roxo" ? "border-purple-500 ring-2 ring-purple-200" : "border-gray-200 hover:border-purple-300"}`}
+                  onClick={() => setTemaRelatorio("roxo")}
+                >
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="w-full h-3 rounded bg-purple-600"></div>
+                    <div className="w-full h-2 rounded bg-purple-300"></div>
+                    <div className="w-3/4 h-2 rounded bg-purple-200"></div>
+                  </div>
+                  <p className="text-xs text-center mt-2 font-medium">Roxo</p>
+                  {temaRelatorio === "roxo" && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
+                  )}
+                </div>
+                
+                <div 
+                  className={`relative border rounded-lg p-4 cursor-pointer ${temaRelatorio === "azul" ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300"}`}
+                  onClick={() => setTemaRelatorio("azul")}
+                >
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="w-full h-3 rounded bg-blue-600"></div>
+                    <div className="w-full h-2 rounded bg-blue-300"></div>
+                    <div className="w-3/4 h-2 rounded bg-blue-200"></div>
+                  </div>
+                  <p className="text-xs text-center mt-2 font-medium">Azul</p>
+                  {temaRelatorio === "azul" && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
+                  )}
+                </div>
+                
+                <div 
+                  className={`relative border rounded-lg p-4 cursor-pointer ${temaRelatorio === "verde" ? "border-green-500 ring-2 ring-green-200" : "border-gray-200 hover:border-green-300"}`}
+                  onClick={() => setTemaRelatorio("verde")}
+                >
+                  <div className="flex flex-col gap-1 items-center">
+                    <div className="w-full h-3 rounded bg-green-600"></div>
+                    <div className="w-full h-2 rounded bg-green-300"></div>
+                    <div className="w-3/4 h-2 rounded bg-green-200"></div>
+                  </div>
+                  <p className="text-xs text-center mt-2 font-medium">Verde</p>
+                  {temaRelatorio === "verde" && (
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-600 rounded-full flex items-center justify-center text-white text-xs">✓</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-violet-50 border border-violet-200 rounded-md p-3 mt-4">
+              <h3 className="text-sm font-medium text-violet-800 mb-2">Seu relatório incluirá:</h3>
+              <ul className="text-sm text-violet-700 space-y-1">
+                <li>• Cabeçalho com dados da empresa</li>
+                <li>• Resumo de valores em formato visual</li>
+                <li>• Tabela de comissões detalhada</li>
+                <li>• Formatação profissional com cores e estilos</li>
+              </ul>
+            </div>
+          </TabsContent>
         </Tabs>
         
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleExportar}>
+          <Button onClick={handleExportar} className={formatoExportacao === "pdf" ? "bg-purple-600 hover:bg-purple-700" : ""}>
             {formatoExportacao === "csv" ? "Exportar CSV" : "Exportar PDF"}
           </Button>
         </DialogFooter>
