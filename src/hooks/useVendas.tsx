@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,7 +24,18 @@ export const useVendas = () => {
         const { data, error } = await supabase
           .from("vendas")
           .select(`
-            *,
+            id,
+            cliente_id,
+            tipo_imovel,
+            endereco,
+            valor,
+            data_venda,
+            observacoes,
+            comissao_imobiliaria,
+            comissao_corretor,
+            created_at,
+            updated_at,
+            user_id,
             clientes:cliente_id (nome)
           `)
           .order('data_venda', { ascending: false });
@@ -43,6 +53,8 @@ export const useVendas = () => {
             endereco: venda.endereco,
             valor: Number(venda.valor),
             dataVenda: venda.data_venda,
+            comissao_imobiliaria: venda.comissao_imobiliaria !== undefined ? Number(venda.comissao_imobiliaria) : undefined,
+            comissao_corretor: venda.comissao_corretor !== undefined ? Number(venda.comissao_corretor) : undefined,
             observacoes: venda.observacoes || "",
             createdAt: venda.created_at,
             updatedAt: venda.updated_at
@@ -78,6 +90,8 @@ export const useVendas = () => {
           valor: venda.valor,
           data_venda: venda.dataVenda,
           observacoes: venda.observacoes,
+          comissao_imobiliaria: venda.comissao_imobiliaria,
+          comissao_corretor: venda.comissao_corretor,
           user_id: user.id
         })
         .select();
@@ -171,6 +185,8 @@ export const useVendas = () => {
       if (vendaAtualizada.valor !== undefined) atualizacoes.valor = vendaAtualizada.valor;
       if (vendaAtualizada.dataVenda !== undefined) atualizacoes.data_venda = vendaAtualizada.dataVenda;
       if (vendaAtualizada.observacoes !== undefined) atualizacoes.observacoes = vendaAtualizada.observacoes;
+      if (vendaAtualizada.comissao_imobiliaria !== undefined) atualizacoes.comissao_imobiliaria = vendaAtualizada.comissao_imobiliaria;
+      if (vendaAtualizada.comissao_corretor !== undefined) atualizacoes.comissao_corretor = vendaAtualizada.comissao_corretor;
 
       const { error } = await supabase
         .from("vendas")

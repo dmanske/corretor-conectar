@@ -35,9 +35,12 @@ const NovaVenda = () => {
   const [formData, setFormData] = useState({
     clienteId: clienteIdFromUrl || "",
     tipoImovel: "",
+    outroTipoImovel: "",
     endereco: "",
     valor: "",
     dataVenda: new Date().toISOString().substring(0, 10),
+    comissaoImobiliaria: "",
+    comissaoCorretor: "",
     observacoes: ""
   });
   
@@ -97,10 +100,12 @@ const NovaVenda = () => {
     
     const novaVenda = {
       clienteId: formData.clienteId,
-      tipoImovel: formData.tipoImovel as any,
+      tipoImovel: formData.tipoImovel === 'Outro' ? formData.outroTipoImovel : formData.tipoImovel,
       endereco: formData.endereco,
       valor: valorNumerico,
       dataVenda: dataVendaString,
+      comissao_imobiliaria: formData.comissaoImobiliaria ? parseFloat(formData.comissaoImobiliaria.replace(/[^0-9,]/g, '').replace(',', '.')) : undefined,
+      comissao_corretor: formData.comissaoCorretor ? parseFloat(formData.comissaoCorretor.replace(/[^0-9,]/g, '').replace(',', '.')) : undefined,
       observacoes: formData.observacoes
     };
     
@@ -193,6 +198,17 @@ const NovaVenda = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {formData.tipoImovel === 'Outro' && (
+                    <Input
+                      id="outroTipoImovel"
+                      name="outroTipoImovel"
+                      placeholder="Descreva o tipo de imóvel"
+                      value={formData.outroTipoImovel}
+                      onChange={handleChange}
+                      required
+                      className="mt-2"
+                    />
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -238,6 +254,31 @@ const NovaVenda = () => {
                     value={formData.dataVenda}
                     onChange={handleChange}
                     required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="comissaoImobiliaria">Comissão da Imobiliária (R$)</Label>
+                  <Input
+                    id="comissaoImobiliaria"
+                    name="comissaoImobiliaria"
+                    placeholder="Ex: 10.000,00"
+                    value={formData.comissaoImobiliaria}
+                    onChange={handleChange}
+                    className="pl-2"
+                    type="text"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="comissaoCorretor">Comissão do Corretor (R$)</Label>
+                  <Input
+                    id="comissaoCorretor"
+                    name="comissaoCorretor"
+                    placeholder="Ex: 4.500,00"
+                    value={formData.comissaoCorretor}
+                    onChange={handleChange}
+                    className="pl-2"
+                    type="text"
                   />
                 </div>
                 

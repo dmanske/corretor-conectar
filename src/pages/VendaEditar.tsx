@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, X } from "lucide-react";
@@ -35,6 +34,8 @@ const VendaEditar = () => {
     endereco: "",
     valor: "",
     dataVenda: "",
+    comissaoImobiliaria: "",
+    comissaoCorretor: "",
     observacoes: ""
   });
   
@@ -49,6 +50,8 @@ const VendaEditar = () => {
           endereco: vendaEncontrada.endereco,
           valor: formatarValorInput(vendaEncontrada.valor),
           dataVenda: vendaEncontrada.dataVenda,
+          comissaoImobiliaria: vendaEncontrada.comissao_imobiliaria ? formatarValorInput(vendaEncontrada.comissao_imobiliaria) : "",
+          comissaoCorretor: vendaEncontrada.comissao_corretor ? formatarValorInput(vendaEncontrada.comissao_corretor) : "",
           observacoes: vendaEncontrada.observacoes || ""
         });
       } else {
@@ -207,6 +210,31 @@ const VendaEditar = () => {
                     type="date"
                     value={formData.dataVenda}
                     onChange={handleChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="comissaoImobiliaria">Comissão da Imobiliária (R$)</Label>
+                  <Input
+                    id="comissaoImobiliaria"
+                    name="comissaoImobiliaria"
+                    placeholder="Ex: 10.000,00"
+                    value={formData.comissaoImobiliaria}
+                    onChange={handleChange}
+                    className="pl-2"
+                    type="text"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="comissaoCorretor">Comissão do Corretor (R$)</Label>
+                  <Input
+                    id="comissaoCorretor"
+                    name="comissaoCorretor"
+                    placeholder="Ex: 4.500,00"
+                    value={formData.comissaoCorretor}
+                    onChange={handleChange}
+                    className="pl-2"
+                    type="text"
                   />
                 </div>
                 

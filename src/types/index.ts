@@ -20,10 +20,12 @@ export interface Venda {
   id: string;
   clienteId: string;
   clienteNome: string;
-  tipoImovel: "Apartamento" | "Casa" | "Terreno" | "Prédio" | "Comercial" | "Outro";
+  tipoImovel: string;
   endereco: string;
   valor: number;
   dataVenda: string; // Formato ISO "YYYY-MM-DD"
+  comissao_imobiliaria?: number;
+  comissao_corretor?: number;
   observacoes?: string;
   createdAt: string;
   updatedAt: string;

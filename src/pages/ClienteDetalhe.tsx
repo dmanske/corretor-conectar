@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientCard } from "@/components/ClientCard";
+import { Modal } from "@/components/ui/modal";
 
 const ClienteDetalhe = () => {
   const { id } = useParams();
@@ -45,6 +46,8 @@ const ClienteDetalhe = () => {
   const [salvando, setSalvando] = useState(false);
   const location = useLocation();
   const visualizacao = location.state?.visualizacao || "grid";
+  const [isDetalhesVendaModalOpen, setIsDetalhesVendaModalOpen] = useState(false);
+  const [selectedVenda, setSelectedVenda] = useState<any | null>(null);
   
   useEffect(() => {
     // Buscar cliente e vendas
@@ -89,14 +92,22 @@ const ClienteDetalhe = () => {
   // Função para abrir modal de edição
   const abrirModalEditarVenda = (venda: any) => {
     setVendaEditando(venda);
-    setFormVenda({ ...venda });
+    setFormVenda({
+      ...venda,
+      comissao_imobiliaria: venda.comissao_imobiliaria || '',
+      comissao_corretor: venda.comissao_corretor || '',
+      observacoes: venda.observacoes || ''
+    });
   };
 
   // Função para salvar edição da venda
   const salvarEdicaoVenda = async () => {
     if (!vendaEditando) return;
     setSalvandoVenda(true);
-    await atualizarVenda(vendaEditando.id, formVenda);
+    await atualizarVenda(vendaEditando.id, {
+      ...formVenda,
+      observacoes: formVenda.observacoes
+    });
     setSalvandoVenda(false);
     setVendaEditando(null);
     toast({
@@ -204,6 +215,26 @@ const ClienteDetalhe = () => {
   const handleDelete = () => setConfirmationOpen(true);
   const handleNewSale = () => navigate(`/vendas/nova?cliente=${cliente.id}`);
 
+  const handleAprovarVenda = (vendaId: string) => {
+    // Implemente a lógica para aprovar uma venda
+    console.log("Aprovar venda:", vendaId);
+    toast({
+      title: "Venda aprovada",
+      description: "A venda foi aprovada com sucesso.",
+      variant: "success"
+    });
+  };
+
+  const handleReprovarVenda = (vendaId: string) => {
+    // Implemente a lógica para reprovar uma venda
+    console.log("Reprovar venda:", vendaId);
+    toast({
+      title: "Venda reprovada",
+      description: "A venda foi reprovada com sucesso.",
+      variant: "destructive"
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center mb-4">
@@ -231,7 +262,10 @@ const ClienteDetalhe = () => {
           property: venda.tipoImovel,
           date: venda.dataVenda,
           value: venda.valor,
-          type: venda.tipoImovel === 'Prédio' ? 'predio' : venda.tipoImovel === 'Comercial' ? 'comercial' : 'casa'
+          type: venda.tipoImovel === 'Prédio' ? 'predio' : venda.tipoImovel === 'Comercial' ? 'comercial' : 'casa',
+          comissao_corretor: venda.comissao_corretor ?? venda.comissaoCorretor ?? venda.comissaoCorretor,
+          comissao_imobiliaria: venda.comissao_imobiliaria ?? venda.comissaoImobiliaria ?? venda.comissaoImobiliaria,
+          observacoes: venda.observacoes
         }))}
         onWhatsAppClick={handleWhatsAppClick}
         onViewDetails={handleViewDetails}
@@ -240,13 +274,32 @@ const ClienteDetalhe = () => {
         onNewSale={handleNewSale}
         onViewSale={(saleId) => {
           const venda = vendasCliente.find(v => v.id === saleId);
-          if (venda) setVendaDetalhe(venda);
+          if (venda) {
+            setSelectedVenda({
+              ...venda,
+              valor_total: venda.valor,
+              data_venda: venda.dataVenda,
+              produto: venda.tipoImovel,
+              plano: venda.tipoImovel,
+              valor_mensal: venda.valor / 12,
+              status: 'Pendente',
+              cliente_nome: cliente.nome,
+              cliente_cpf: cliente.cpf,
+              cliente_telefone: cliente.telefone,
+              observacoes: venda.observacao,
+              comissao_imobiliaria: venda.comissao_imobiliaria,
+              comissao_corretor: venda.comissao_corretor
+            });
+            setIsDetalhesVendaModalOpen(true);
+          }
         }}
         onEditSale={(saleId) => {
           const venda = vendasCliente.find(v => v.id === saleId);
           if (venda) abrirModalEditarVenda(venda);
         }}
         onDeleteSale={(saleId) => setVendaParaExcluir(saleId)}
+        onApproveSale={handleAprovarVenda}
+        onRejectSale={handleReprovarVenda}
       />
       
       {/* Diálogo de confirmação para exclusão */}
@@ -277,27 +330,146 @@ const ClienteDetalhe = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modais de detalhes, edição e confirmação de exclusão de venda */}
-      <Dialog open={!!vendaDetalhe} onOpenChange={open => { if (!open) setVendaDetalhe(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Detalhes da Venda</DialogTitle>
-          </DialogHeader>
-          {vendaDetalhe && (
-            <div className="space-y-2">
-              <p><b>Tipo do imóvel:</b> {vendaDetalhe.tipoImovel}</p>
-              <p><b>Valor:</b> {formatarMoeda(vendaDetalhe.valor)}</p>
-              <p><b>Data da venda:</b> {formatarData(vendaDetalhe.dataVenda)}</p>
-              <p><b>Observação:</b> {vendaDetalhe.observacao || '-'}</p>
+      {/* Modal de Detalhes da Venda */}
+      <Modal
+        isOpen={isDetalhesVendaModalOpen}
+        onClose={() => setIsDetalhesVendaModalOpen(false)}
+        title={null}
+      >
+        <div className="space-y-6">
+          {/* Cabeçalho */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{selectedVenda?.id ? `Venda #${selectedVenda.id}` : ''}</h3>
+                <p className="text-sm text-gray-500">Informações completas da venda</p>
+              </div>
+            </div>
+
+            {/* Informações Principais */}
+            <div className="flex items-center space-x-2">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                selectedVenda?.status === 'Pendente' ? 'bg-yellow-100 text-yellow-800' :
+                selectedVenda?.status === 'Aprovado' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {selectedVenda?.status}
+              </span>
+            </div>
+          </div>
+
+          {/* Informações Principais */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Valor Total</div>
+              <div className="text-xl font-semibold text-gray-900">
+                {selectedVenda?.valor_total.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Data da Venda</div>
+              <div className="text-xl font-semibold text-gray-900">
+                {selectedVenda?.data_venda ? formatarData(selectedVenda.data_venda) : '-'}
+              </div>
+            </div>
+          </div>
+
+          {/* Detalhes do Produto */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Detalhes do Produto</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Produto</span>
+                <span className="text-sm font-medium text-gray-900">{selectedVenda?.produto}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Plano</span>
+                <span className="text-sm font-medium text-gray-900">{selectedVenda?.plano}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Valor Mensal</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {selectedVenda?.valor_mensal.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Informações do Cliente */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Informações do Cliente</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Nome</span>
+                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_nome}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">CPF</span>
+                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_cpf}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Telefone</span>
+                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_telefone}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Observações */}
+          {selectedVenda?.observacoes && (
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Observações</h4>
+              <p className="text-sm text-gray-600">{selectedVenda.observacoes}</p>
             </div>
           )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Fechar</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+          {/* Botões de Ação */}
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <button
+              onClick={() => setIsDetalhesVendaModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Fechar
+            </button>
+            {selectedVenda?.status === 'Pendente' && (
+              <>
+                <button
+                  onClick={() => {
+                    if (selectedVenda) {
+                      handleAprovarVenda(selectedVenda.id);
+                      setIsDetalhesVendaModalOpen(false);
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  Aprovar Venda
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedVenda) {
+                      handleReprovarVenda(selectedVenda.id);
+                      setIsDetalhesVendaModalOpen(false);
+                    }
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Reprovar Venda
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </Modal>
 
       <Dialog open={!!vendaEditando} onOpenChange={open => { if (!open) setVendaEditando(null); }}>
         <DialogContent>
@@ -319,8 +491,16 @@ const ClienteDetalhe = () => {
                 <input className="w-full border rounded px-2 py-1" type="date" value={formVenda.dataVenda ? formVenda.dataVenda.slice(0,10) : ''} onChange={e => setFormVenda(f => ({ ...f, dataVenda: e.target.value }))} required />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Observação</label>
-                <textarea className="w-full border rounded px-2 py-1" value={formVenda.observacao || ''} onChange={e => setFormVenda(f => ({ ...f, observacao: e.target.value }))} />
+                <label className="block text-sm font-medium mb-1">Comissão da Imobiliária (R$)</label>
+                <input className="w-full border rounded px-2 py-1" type="number" value={formVenda.comissao_imobiliaria || ''} onChange={e => setFormVenda(f => ({ ...f, comissao_imobiliaria: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Comissão do Corretor (R$)</label>
+                <input className="w-full border rounded px-2 py-1" type="number" value={formVenda.comissao_corretor || ''} onChange={e => setFormVenda(f => ({ ...f, comissao_corretor: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea className="w-full border rounded px-2 py-1" value={formVenda.observacoes || ''} onChange={e => setFormVenda(f => ({ ...f, observacoes: e.target.value }))} />
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={salvandoVenda}>{salvandoVenda ? "Salvando..." : "Salvar"}</Button>
