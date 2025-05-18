@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           // Use setTimeout to avoid multiple redirections in the same tick
           setTimeout(() => {
-            if (mounted && window.location.pathname === "/auth") {
+            if (mounted) {
               navigate("/", { replace: true });
             }
           }, 0);
@@ -77,10 +77,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(currentSession?.user ?? null);
         setIsAuthenticated(!!currentSession);
         setIsLoading(false);
-        
-        if (currentSession && window.location.pathname === "/auth") {
-          navigate("/", { replace: true });
-        }
       } catch (error) {
         console.error("Error checking session:", error);
         setIsLoading(false);
@@ -170,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}/auth`,
+          redirectTo: `${origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

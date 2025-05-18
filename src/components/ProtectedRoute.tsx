@@ -1,6 +1,6 @@
 
 import { ReactNode, useEffect } from 'react';
-import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ProtectedRouteProps {
@@ -9,18 +9,16 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   
   useEffect(() => {
-    // Only redirect if we're sure the user is not authenticated and loading is complete
-    if (!isLoading && !isAuthenticated) {
-      navigate("/auth", { 
-        replace: true,
-        state: { from: location.pathname }
-      });
-    }
-  }, [isAuthenticated, isLoading, navigate, location.pathname]);
+    // Log when the protected route renders to help with debugging
+    console.log("ProtectedRoute renderizado:", {
+      isAuthenticated,
+      isLoading,
+      path: location.pathname
+    });
+  }, [isAuthenticated, isLoading, location.pathname]);
 
   if (isLoading) {
     return (
@@ -30,11 +28,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // Don't render children until we're sure the user is authenticated
+  // Redirect to auth if not authenticated
   if (!isAuthenticated) {
-    return null; // useEffect will handle the navigation
+    console.log("Não autenticado em ProtectedRoute, redirecionando para /auth");
+    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
+  // Only render children when user is authenticated
   return <>{children}</>;
 };
 

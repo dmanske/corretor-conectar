@@ -14,9 +14,12 @@ const Auth = () => {
   const from = location.state?.from || "/";
 
   useEffect(() => {
+    // Log when the Auth page renders to help with debugging
+    console.log("Auth page renderizada:", { isAuthenticated, isLoading, from });
+    
     // Se o usuário já estiver autenticado e não estiver carregando, redireciona para a página inicial
     if (isAuthenticated && !isLoading) {
-      console.log("Usuário já autenticado na página Auth, redirecionando para /");
+      console.log("Usuário já autenticado na página Auth, redirecionando para", from);
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate, from]);
@@ -44,8 +47,12 @@ const Auth = () => {
           <TabsTrigger value="login">Login</TabsTrigger>
           <TabsTrigger value="register">Cadastro</TabsTrigger>
         </TabsList>
-        <LoginForm />
-        <RegisterForm />
+        <TabsContent value="login">
+          <LoginForm />
+        </TabsContent>
+        <TabsContent value="register">
+          <RegisterForm />
+        </TabsContent>
       </Tabs>
     </AuthContainer>
   );

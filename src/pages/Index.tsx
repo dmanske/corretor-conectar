@@ -1,11 +1,19 @@
 
 import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import Comissoes from "./Comissoes";
+import Dashboard from "./Dashboard";
 
 const Index = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // If authenticated and done loading, ensure we stay on the page
+    if (isAuthenticated && !isLoading) {
+      console.log("Usuario autenticado no Index, carregando Dashboard");
+    }
+  }, [isAuthenticated, isLoading, navigate]);
   
   // Show loading state while checking auth
   if (isLoading) {
@@ -18,11 +26,12 @@ const Index = () => {
   
   // If not authenticated, redirect to auth page
   if (!isAuthenticated) {
+    console.log("Não autenticado no Index, redirecionando para /auth");
     return <Navigate to="/auth" replace />;
   }
   
   // Only render the dashboard when we're sure the user is authenticated
-  return <Comissoes />;
+  return <Dashboard />;
 };
 
 export default Index;
