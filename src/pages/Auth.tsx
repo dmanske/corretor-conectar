@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import AuthContainer from "@/components/auth/AuthContainer";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
@@ -11,7 +11,6 @@ import Landing from "./Landing";
 const Auth = () => {
   const [authMode, setAuthMode] = useState<"login" | "register" | "forgotPassword">("login");
   const { isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
 
   // If authenticated, redirect to dashboard
   if (isAuthenticated && !isLoading) {

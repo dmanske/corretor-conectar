@@ -1,13 +1,18 @@
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaUserPlus, 
   FaChartLine, 
   FaBirthdayCake, 
   FaFileAlt, 
   FaMoneyBillWave, 
-  FaDesktop 
+  FaDesktop,
+  FaFacebookF,
+  FaTwitter,
+  FaInstagram,
+  FaLinkedinIn,
+  FaYoutube
 } from 'react-icons/fa';
 import { useTheme } from '@/hooks/useTheme';
 import { useToast } from '@/hooks/use-toast';
@@ -144,8 +149,32 @@ const Landing = () => {
     }
   };
 
+  const buttonHover = {
+    rest: { scale: 1 },
+    hover: { 
+      scale: 1.05,
+      transition: { duration: 0.2 }
+    }
+  };
+
+  const cardHover = {
+    rest: { y: 0, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" },
+    hover: { 
+      y: -10, 
+      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+      transition: { duration: 0.3 }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background font-sans">
+    <div className="min-h-screen bg-background font-sans overflow-hidden">
+      {/* Gradient Orbs - Background Effects */}
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-primary/30 to-blue-500/20 blur-[120px] animate-[float_15s_ease-in-out_infinite]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-blue-500/20 to-emerald-500/30 blur-[120px] animate-[float_18s_ease-in-out_infinite_reverse]"></div>
+        <div className="absolute top-[40%] left-[25%] w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-purple-500/20 to-pink-500/20 blur-[100px] animate-[float_20s_ease-in-out_infinite]"></div>
+      </div>
+
       {/* Navbar */}
       <motion.nav 
         className={`fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300 ${
@@ -157,37 +186,41 @@ const Landing = () => {
       >
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-xl font-semibold text-primary">Corretor</span>
+            <span className="text-xl font-semibold text-primary">Corretor<span className="text-blue-500">Conecta</span></span>
           </div>
           
           <div className="hidden md:flex space-x-8">
-            <a href="#funcionalidades" className="text-foreground hover:text-primary transition-colors">Funcionalidades</a>
-            <a href="#beneficios" className="text-foreground hover:text-primary transition-colors">Benefícios</a>
-            <a href="#depoimentos" className="text-foreground hover:text-primary transition-colors">Depoimentos</a>
-            <a href="#contato" className="text-foreground hover:text-primary transition-colors">Contato</a>
+            <a href="#funcionalidades" className="text-foreground hover:text-primary transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300">Funcionalidades</a>
+            <a href="#beneficios" className="text-foreground hover:text-primary transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300">Benefícios</a>
+            <a href="#depoimentos" className="text-foreground hover:text-primary transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300">Depoimentos</a>
+            <a href="#contato" className="text-foreground hover:text-primary transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-primary after:transition-all after:duration-300">Contato</a>
           </div>
           
           <div className="flex items-center space-x-4">
-            <button 
+            <motion.button 
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              whileHover={{ rotate: 180 }}
+              transition={{ duration: 0.3 }}
               aria-label={`Mudar para modo ${theme === 'dark' ? 'claro' : 'escuro'}`}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
-            </button>
-            <a 
+            </motion.button>
+            <motion.a 
               href="#cadastro"
-              className="bg-primary text-white px-6 py-2 rounded-full hover:bg-primary/90 transition-colors hidden md:block"
+              className="bg-gradient-to-r from-primary to-blue-500 text-white px-6 py-2 rounded-full shadow-lg shadow-primary/20"
+              whileHover="hover"
+              variants={buttonHover}
             >
               Buscar Agora
-            </a>
+            </motion.a>
           </div>
         </div>
       </motion.nav>
       
       {/* Hero Section */}
       <section className="relative pt-40 pb-20 px-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-blue-600 -z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary to-blue-600 dark:from-primary/90 dark:to-blue-700/90 -z-10"></div>
         <div className="max-w-7xl mx-auto">
           <motion.div 
             className="max-w-2xl text-white"
@@ -197,19 +230,19 @@ const Landing = () => {
             variants={staggerContainer}
           >
             <motion.p 
-              className="text-sm font-medium mb-2"
+              className="text-sm font-medium mb-2 text-white/80"
               variants={fadeInUp}
             >
               App para imobiliárias e corretores
             </motion.p>
             <motion.h1 
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="text-4xl md:text-5xl font-bold mb-4 leading-tight"
               variants={fadeInUp}
             >
               Sua Solução Completa para Gestão Imobiliária
             </motion.h1>
             <motion.p 
-              className="text-lg mb-8"
+              className="text-lg mb-8 text-white/90"
               variants={fadeInUp}
             >
               Organize seus clientes, vendas e comissões em um só lugar. 
@@ -220,18 +253,22 @@ const Landing = () => {
               className="flex flex-wrap gap-4"
               variants={fadeInUp}
             >
-              <a 
+              <motion.a 
                 href="#cadastro" 
-                className="bg-white text-primary px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors"
+                className="bg-white text-primary px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors shadow-xl shadow-white/20"
+                whileHover="hover"
+                variants={buttonHover}
               >
                 Buscar Agora
-              </a>
-              <a 
+              </motion.a>
+              <motion.a 
                 href="#funcionalidades" 
                 className="border border-white text-white px-6 py-3 rounded-full font-medium hover:bg-white/10 transition-colors"
+                whileHover="hover"
+                variants={buttonHover}
               >
                 Saiba Mais
-              </a>
+              </motion.a>
             </motion.div>
           </motion.div>
         </div>
@@ -263,11 +300,13 @@ const Landing = () => {
           >
             {/* Feature 1 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-all"
+              className="rounded-xl p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl border border-white/10 dark:border-gray-700/30"
               variants={fadeInUp}
-              whileHover={{ y: -5 }}
+              whileHover="hover"
+              initial="rest"
+              variants={cardHover}
             >
-              <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-emerald-400/20">
                 <FaUserPlus size={28} />
               </div>
               <h3 className="text-xl font-bold mb-2">Cadastro de Clientes</h3>
@@ -278,11 +317,13 @@ const Landing = () => {
             
             {/* Feature 2 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-all"
+              className="rounded-xl p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl border border-white/10 dark:border-gray-700/30"
               variants={fadeInUp}
-              whileHover={{ y: -5 }}
+              whileHover="hover"
+              initial="rest"
+              variants={cardHover}
             >
-              <div className="h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 text-blue-600 dark:text-blue-400">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-blue-400/20">
                 <FaChartLine size={28} />
               </div>
               <h3 className="text-xl font-bold mb-2">Gestão de Vendas</h3>
@@ -293,11 +334,13 @@ const Landing = () => {
             
             {/* Feature 3 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-all"
+              className="rounded-xl p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl border border-white/10 dark:border-gray-700/30"
               variants={fadeInUp}
-              whileHover={{ y: -5 }}
+              whileHover="hover"
+              initial="rest"
+              variants={cardHover}
             >
-              <div className="h-16 w-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4 text-purple-600 dark:text-purple-400">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-purple-400/20">
                 <FaBirthdayCake size={28} />
               </div>
               <h3 className="text-xl font-bold mb-2">Alertas de Aniversário</h3>
@@ -308,11 +351,13 @@ const Landing = () => {
             
             {/* Feature 4 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-all"
+              className="rounded-xl p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl border border-white/10 dark:border-gray-700/30"
               variants={fadeInUp}
-              whileHover={{ y: -5 }}
+              whileHover="hover"
+              initial="rest"
+              variants={cardHover}
             >
-              <div className="h-16 w-16 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center mb-4 text-teal-600 dark:text-teal-400">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-teal-400/20">
                 <FaFileAlt size={28} />
               </div>
               <h3 className="text-xl font-bold mb-2">Relatórios Detalhados</h3>
@@ -323,11 +368,13 @@ const Landing = () => {
             
             {/* Feature 5 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-all"
+              className="rounded-xl p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl border border-white/10 dark:border-gray-700/30"
               variants={fadeInUp}
-              whileHover={{ y: -5 }}
+              whileHover="hover"
+              initial="rest"
+              variants={cardHover}
             >
-              <div className="h-16 w-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4 text-amber-600 dark:text-amber-400">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-amber-400/20">
                 <FaMoneyBillWave size={28} />
               </div>
               <h3 className="text-xl font-bold mb-2">Gestão Financeira</h3>
@@ -338,11 +385,13 @@ const Landing = () => {
             
             {/* Feature 6 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 shadow-sm border border-border hover:shadow-md transition-all"
+              className="rounded-xl p-6 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl border border-white/10 dark:border-gray-700/30"
               variants={fadeInUp}
-              whileHover={{ y: -5 }}
+              whileHover="hover"
+              initial="rest"
+              variants={cardHover}
             >
-              <div className="h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-indigo-400/20">
                 <FaDesktop size={28} />
               </div>
               <h3 className="text-xl font-bold mb-2">Interface Amigável</h3>
@@ -355,7 +404,8 @@ const Landing = () => {
       </section>
       
       {/* Benefits Section */}
-      <section id="beneficios" className="py-20 px-6 bg-muted/30">
+      <section id="beneficios" className="py-20 px-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iLjAyIj48cGF0aCBkPSJNMzYgMzBoMnYyaC0yek0zMCAzMGgydjJoLTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-40"></div>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row gap-12 items-center">
             <motion.div 
@@ -365,7 +415,7 @@ const Landing = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl font-bold mb-4">Simplifique seu Trabalho com o Corretor Conecta</h2>
+              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">Simplifique seu Trabalho com o Corretor Conecta</h2>
               <p className="text-lg text-muted-foreground mb-8">
                 Nossos usuários economizam, em média, 10 horas por semana com as funcionalidades do Corretor Conecta, podendo usar esse tempo para gerar mais clientes financeiros.
               </p>
@@ -378,7 +428,7 @@ const Landing = () => {
                   viewport={{ once: true }}
                   transition={{ delay: 0.1 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center mt-1">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 flex items-center justify-center mt-1 shadow-lg shadow-emerald-400/20">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M11.6667 3.5L5.25 9.91667L2.33333 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -393,7 +443,7 @@ const Landing = () => {
                   viewport={{ once: true }}
                   transition={{ delay: 0.2 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center mt-1">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 flex items-center justify-center mt-1 shadow-lg shadow-emerald-400/20">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M11.6667 3.5L5.25 9.91667L2.33333 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -408,7 +458,7 @@ const Landing = () => {
                   viewport={{ once: true }}
                   transition={{ delay: 0.3 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center mt-1">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 flex items-center justify-center mt-1 shadow-lg shadow-emerald-400/20">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M11.6667 3.5L5.25 9.91667L2.33333 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -423,7 +473,7 @@ const Landing = () => {
                   viewport={{ once: true }}
                   transition={{ delay: 0.4 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center mt-1">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 flex items-center justify-center mt-1 shadow-lg shadow-emerald-400/20">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M11.6667 3.5L5.25 9.91667L2.33333 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -438,7 +488,7 @@ const Landing = () => {
                   viewport={{ once: true }}
                   transition={{ delay: 0.5 }}
                 >
-                  <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center mt-1">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600 flex items-center justify-center mt-1 shadow-lg shadow-emerald-400/20">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M11.6667 3.5L5.25 9.91667L2.33333 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -449,7 +499,7 @@ const Landing = () => {
               
               <motion.a 
                 href="#cadastro"
-                className="inline-block mt-8 bg-primary text-white px-6 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors"
+                className="inline-block mt-8 bg-gradient-to-r from-primary to-blue-500 text-white px-6 py-3 rounded-full font-medium shadow-lg shadow-primary/20"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -465,22 +515,41 @@ const Landing = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="relative">
-                <div className="rounded-lg overflow-hidden shadow-xl">
-                  <img 
-                    src="/lovable-uploads/a757818f-7692-4600-9a21-8bfbcefc9da5.png" 
-                    alt="Dashboard do Sistema" 
-                    className="w-full object-cover"
-                  />
+                <div className="rounded-lg overflow-hidden shadow-2xl">
+                  <div className="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 relative overflow-hidden rounded-lg border border-white/10">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                      <div className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-lg border border-white/10 shadow-xl p-6">
+                        <div className="flex justify-between items-center mb-6">
+                          <div className="flex items-center gap-2">
+                            <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                            <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
+                            <div className="h-3 w-3 rounded-full bg-green-500"></div>
+                          </div>
+                          <div className="text-white/50 text-xs">Dashboard</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                          <div className="bg-white/10 rounded-lg p-4 h-20"></div>
+                          <div className="bg-white/10 rounded-lg p-4 h-20"></div>
+                          <div className="bg-white/10 rounded-lg p-4 h-20"></div>
+                        </div>
+                        <div className="bg-white/10 rounded-lg p-4 h-40 mb-4"></div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white/10 rounded-lg p-4 h-24"></div>
+                          <div className="bg-white/10 rounded-lg p-4 h-24"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute -bottom-4 -right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+                <div className="absolute -bottom-4 -right-4 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4 shadow-xl border border-white/10 dark:border-gray-700/30">
                   <div className="flex items-center gap-2 text-sm">
-                    <div className="h-3 w-3 rounded-full bg-emerald-500"></div>
+                    <div className="h-3 w-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
                     <span>Notificações Integradas</span>
                   </div>
                 </div>
-                <div className="absolute -top-4 -left-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+                <div className="absolute -top-4 -left-4 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg p-4 shadow-xl border border-white/10 dark:border-gray-700/30">
                   <div className="flex items-center gap-2 text-sm">
-                    <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                    <div className="h-3 w-3 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"></div>
                     <span>Relatórios Inteligentes</span>
                   </div>
                 </div>
@@ -491,9 +560,15 @@ const Landing = () => {
       </section>
       
       {/* CTA Section */}
-      <section className="py-20 px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-blue-600 -z-10"></div>
-        <div className="max-w-7xl mx-auto text-center">
+      <section className="py-20 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary to-blue-600 -z-10"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjA1Ij48cGF0aCBkPSJNMzYgMzBoMnYyaC0yek0zMCAzMGgydjJoLTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
+        
+        {/* Animated circles */}
+        <div className="absolute top-0 left-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl"></div>
+        
+        <div className="max-w-7xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -507,7 +582,7 @@ const Landing = () => {
             
             <div id="cadastro" className="max-w-md mx-auto">
               <motion.div 
-                className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg"
+                className="bg-white/10 backdrop-blur-xl p-6 rounded-xl shadow-2xl border border-white/20"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -521,11 +596,11 @@ const Landing = () => {
                       placeholder="Seu nome"
                       value={formData.name}
                       onChange={handleChange}
-                      className={`w-full p-3 rounded-lg border ${
-                        formErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } dark:bg-gray-700`}
+                      className={`w-full p-3 rounded-lg border bg-white/5 backdrop-blur-md text-white placeholder-white/60 ${
+                        formErrors.name ? 'border-red-500' : 'border-white/20'
+                      }`}
                     />
-                    {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                    {formErrors.name && <p className="text-red-300 text-sm mt-1">{formErrors.name}</p>}
                   </div>
                   
                   <div>
@@ -535,11 +610,11 @@ const Landing = () => {
                       placeholder="Seu e-mail"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full p-3 rounded-lg border ${
-                        formErrors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } dark:bg-gray-700`}
+                      className={`w-full p-3 rounded-lg border bg-white/5 backdrop-blur-md text-white placeholder-white/60 ${
+                        formErrors.email ? 'border-red-500' : 'border-white/20'
+                      }`}
                     />
-                    {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>}
+                    {formErrors.email && <p className="text-red-300 text-sm mt-1">{formErrors.email}</p>}
                   </div>
                   
                   <div>
@@ -549,11 +624,11 @@ const Landing = () => {
                       placeholder="Seu telefone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={`w-full p-3 rounded-lg border ${
-                        formErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } dark:bg-gray-700`}
+                      className={`w-full p-3 rounded-lg border bg-white/5 backdrop-blur-md text-white placeholder-white/60 ${
+                        formErrors.phone ? 'border-red-500' : 'border-white/20'
+                      }`}
                     />
-                    {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>}
+                    {formErrors.phone && <p className="text-red-300 text-sm mt-1">{formErrors.phone}</p>}
                   </div>
                   
                   <div>
@@ -563,19 +638,21 @@ const Landing = () => {
                       rows={4}
                       value={formData.message}
                       onChange={handleChange}
-                      className={`w-full p-3 rounded-lg border ${
-                        formErrors.message ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                      } dark:bg-gray-700`}
+                      className={`w-full p-3 rounded-lg border bg-white/5 backdrop-blur-md text-white placeholder-white/60 ${
+                        formErrors.message ? 'border-red-500' : 'border-white/20'
+                      }`}
                     ></textarea>
-                    {formErrors.message && <p className="text-red-500 text-sm mt-1">{formErrors.message}</p>}
+                    {formErrors.message && <p className="text-red-300 text-sm mt-1">{formErrors.message}</p>}
                   </div>
                   
-                  <button
+                  <motion.button
                     type="submit"
-                    className="w-full bg-primary text-white py-3 px-6 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                    className="w-full bg-white text-primary py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors shadow-xl shadow-white/10"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     Cadastrar
-                  </button>
+                  </motion.button>
                 </form>
               </motion.div>
             </div>
@@ -584,7 +661,7 @@ const Landing = () => {
       </section>
       
       {/* Testimonials */}
-      <section id="depoimentos" className="py-20 px-6">
+      <section id="depoimentos" className="py-20 px-6 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <motion.div 
             className="text-center mb-16"
@@ -593,7 +670,7 @@ const Landing = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl font-bold mb-2">O que Dizem Nossos Usuários</h2>
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">O que Dizem Nossos Usuários</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Confira as histórias de sucesso de corretores e profissionais que transformaram seu negócio com o Corretor Conecta.
             </p>
@@ -608,8 +685,10 @@ const Landing = () => {
           >
             {/* Testimonial 1 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 border border-border shadow-sm"
+              className="bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 border border-white/10 dark:border-gray-700/30 shadow-xl"
               variants={fadeInUp}
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
             >
               <div className="flex flex-col h-full">
                 <div className="mb-4">
@@ -627,7 +706,7 @@ const Landing = () => {
                 </blockquote>
                 
                 <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center mr-4 text-white">
                     <span className="text-lg font-bold">RA</span>
                   </div>
                   <div>
@@ -640,8 +719,10 @@ const Landing = () => {
             
             {/* Testimonial 2 */}
             <motion.div 
-              className="bg-card rounded-xl p-6 border border-border shadow-sm"
+              className="bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 border border-white/10 dark:border-gray-700/30 shadow-xl"
               variants={fadeInUp}
+              whileHover={{ y: -5 }}
+              transition={{ duration: 0.3 }}
             >
               <div className="flex flex-col h-full">
                 <div className="mb-4">
@@ -659,7 +740,7 @@ const Landing = () => {
                 </blockquote>
                 
                 <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-blue-500 flex items-center justify-center mr-4 text-white">
                     <span className="text-lg font-bold">JR</span>
                   </div>
                   <div>
@@ -674,8 +755,10 @@ const Landing = () => {
       </section>
       
       {/* Footer */}
-      <footer id="contato" className="bg-gray-900 text-white py-12 px-6">
-        <div className="max-w-7xl mx-auto">
+      <footer id="contato" className="bg-gradient-to-br from-gray-900 to-gray-800 text-white py-12 px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjAzIj48cGF0aCBkPSJNMzYgMzBoMnYyaC0yek0zMCAzMGgydjJoLTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
+        
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-lg font-semibold mb-4">Sobre nós</h3>
@@ -729,26 +812,34 @@ const Landing = () => {
               </ul>
               
               <div className="flex space-x-4 mt-4">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"/>
-                  </svg>
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-                  </svg>
-                </a>
+                <motion.a 
+                  href="#" 
+                  className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors"
+                  whileHover={{ y: -3 }}
+                >
+                  <FaFacebookF className="text-white" />
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors"
+                  whileHover={{ y: -3 }}
+                >
+                  <FaTwitter className="text-white" />
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors"
+                  whileHover={{ y: -3 }}
+                >
+                  <FaInstagram className="text-white" />
+                </motion.a>
+                <motion.a 
+                  href="#" 
+                  className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors"
+                  whileHover={{ y: -3 }}
+                >
+                  <FaLinkedinIn className="text-white" />
+                </motion.a>
               </div>
             </div>
           </div>
