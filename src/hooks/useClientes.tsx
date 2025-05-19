@@ -36,24 +36,29 @@ export const useClientes = () => {
         }
 
         if (data) {
-          const clientesFormatados = data.map(cliente => ({
-            id: cliente.id,
-            nome: cliente.nome,
-            endereco: cliente.endereco || "",
-            complemento: cliente.complemento || "",
-            numero: cliente.numero || "", // Set default empty string if property doesn't exist
-            telefone: cliente.telefone || "",
-            cidade: cliente.cidade || "",
-            estado: cliente.estado || "",
-            cpf: cliente.cpf || "",
-            dataNascimento: cliente.data_nascimento || "",
-            email: cliente.email || "",
-            observacoes: cliente.observacoes || "",
-            cep: cliente.cep || "",
-            createdAt: cliente.created_at || "",
-            updatedAt: cliente.updated_at || "",
-            isPremium: cliente.is_premium || false // Set default false if property doesn't exist
-          }));
+          const clientesFormatados = data.map(cliente => {
+            // Use type assertion to handle potential missing fields
+            const clienteData = cliente as any;
+            
+            return {
+              id: clienteData.id,
+              nome: clienteData.nome,
+              endereco: clienteData.endereco || "",
+              complemento: clienteData.complemento || "",
+              numero: clienteData.numero || "", // Set default empty string
+              telefone: clienteData.telefone || "",
+              cidade: clienteData.cidade || "",
+              estado: clienteData.estado || "",
+              cpf: clienteData.cpf || "",
+              dataNascimento: clienteData.data_nascimento || "",
+              email: clienteData.email || "",
+              observacoes: clienteData.observacoes || "",
+              cep: clienteData.cep || "",
+              createdAt: clienteData.created_at || "",
+              updatedAt: clienteData.updated_at || "",
+              isPremium: clienteData.is_premium || false // Set default false
+            };
+          });
           
           setClientes(clientesFormatados);
         }
@@ -100,22 +105,26 @@ export const useClientes = () => {
       }
 
       if (data && data[0]) {
+        // Use type assertion to handle potential missing fields
+        const clienteData = data[0] as any;
+        
         const novoCliente: Cliente = {
-          id: data[0].id,
-          nome: data[0].nome,
-          endereco: data[0].endereco || "",
-          complemento: data[0].complemento || "",
-          numero: data[0].numero || "", // Set default empty string
-          telefone: data[0].telefone || "",
-          cidade: data[0].cidade || "",
-          estado: data[0].estado || "",
-          cpf: data[0].cpf || "",
-          dataNascimento: data[0].data_nascimento || "",
-          email: data[0].email || "",
-          observacoes: data[0].observacoes || "",
-          cep: data[0].cep || "",
-          createdAt: data[0].created_at,
-          updatedAt: data[0].updated_at
+          id: clienteData.id,
+          nome: clienteData.nome,
+          endereco: clienteData.endereco || "",
+          complemento: clienteData.complemento || "",
+          numero: clienteData.numero || "", // Set default empty string
+          telefone: clienteData.telefone || "",
+          cidade: clienteData.cidade || "",
+          estado: clienteData.estado || "",
+          cpf: clienteData.cpf || "",
+          dataNascimento: clienteData.data_nascimento || "",
+          email: clienteData.email || "",
+          observacoes: clienteData.observacoes || "",
+          cep: clienteData.cep || "",
+          createdAt: clienteData.created_at,
+          updatedAt: clienteData.updated_at,
+          isPremium: clienteData.is_premium || false
         };
 
         setClientes([...clientes, novoCliente]);
