@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useComissoes, type ComissaoStatus } from "../hooks/useComissoes";
 import { useVendas } from "../hooks/useVendas";
@@ -61,8 +60,8 @@ const Comissoes = () => {
 
     const novaComissao = {
       vendaId: formData.vendaId,
-      cliente: venda.clienteNome,
-      imovel: `${venda.tipoImovel} - ${venda.endereco}`,
+      cliente: venda.clienteNome || "",
+      imovel: `${venda.tipoImovel} - ${venda.endereco || venda.enderecoImovel || ""}`,
       valorVenda: Number(formData.valorVenda),
       valorComissaoImobiliaria: Number(formData.valorComissaoImobiliaria),
       valorComissaoCorretor: Number(formData.valorComissaoCorretor),
@@ -96,8 +95,8 @@ const Comissoes = () => {
       setFormData(prev => ({
         ...prev,
         vendaId,
-        cliente: venda.clienteNome,
-        imovel: `${venda.tipoImovel} - ${venda.endereco}`,
+        cliente: venda.clienteNome || "",
+        imovel: `${venda.tipoImovel} - ${venda.endereco || venda.enderecoImovel || ""}`,
         valorVenda: venda.valor.toString(),
         dataContrato: venda.dataVenda
       }));
@@ -255,7 +254,7 @@ const Comissoes = () => {
                 <SelectContent>
                   {vendas.map((venda) => (
                     <SelectItem key={venda.id} value={venda.id}>
-                      {venda.clienteNome} - {venda.tipoImovel} - {formatarMoeda(venda.valor)}
+                      {venda.clienteNome || "Cliente desconhecido"} - {venda.tipoImovel} - {formatarMoeda(venda.valor)}
                     </SelectItem>
                   ))}
                 </SelectContent>

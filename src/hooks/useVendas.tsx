@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -58,7 +59,7 @@ export const useVendas = () => {
             observacoes: venda.observacoes || "",
             createdAt: venda.created_at,
             updatedAt: venda.updated_at
-          }));
+          })) as Venda[];
           
           setVendas(vendasFormatadas);
         }
@@ -86,11 +87,11 @@ export const useVendas = () => {
         .insert({
           cliente_id: venda.clienteId,
           tipo_imovel: venda.tipoImovel,
-          endereco: venda.endereco,
+          endereco: venda.endereco || venda.enderecoImovel,
           valor: venda.valor,
           data_venda: venda.dataVenda,
           observacoes: venda.observacoes,
-          comissao_imobiliaria: venda.comissao_imobiliaria,
+          comissao_imobiliaria: venda.comissao_imobiliaria || venda.comissao,
           comissao_corretor: venda.comissao_corretor,
           user_id: user.id
         })

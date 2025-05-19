@@ -19,6 +19,7 @@ const NovoCliente = () => {
     nome: "",
     endereco: "",
     complemento: "",
+    numero: "", // Added the numero field
     telefone: "",
     cidade: "",
     estado: "",
@@ -201,6 +202,18 @@ const NovoCliente = () => {
                     value={formData.dataNascimento}
                     onChange={handleChange}
                     required
+                  />
+                </div>
+                
+                {/* Add the numero field */}
+                <div className="space-y-2">
+                  <Label htmlFor="numero">Número</Label>
+                  <Input
+                    id="numero"
+                    name="numero"
+                    placeholder="Ex: 123"
+                    value={formData.numero}
+                    onChange={handleChange}
                   />
                 </div>
               </div>

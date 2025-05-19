@@ -1,59 +1,46 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Save, X, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useVendas } from "@/hooks/useVendas";
 import { useClientes } from "@/hooks/useClientes";
-import { useVendasContext } from "@/hooks/VendasProvider";
-
-const tiposImoveis = [
-  "Apartamento",
-  "Casa",
-  "Terreno",
-  "Prédio",
-  "Comercial",
-  "Outro"
-];
+import { formatarMoeda } from "@/lib/utils";
 
 const NovaVenda = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
+  const { adicionarVenda } = useVendas();
   const { clientes } = useClientes();
-  const { adicionarVenda, formatarMoeda } = useVendasContext();
-  
-  // Extrair o ID do cliente da URL, se existir
-  const queryParams = new URLSearchParams(location.search);
-  const clienteIdFromUrl = queryParams.get('cliente');
-  const clienteFromUrl = clienteIdFromUrl ? clientes.find(c => c.id === clienteIdFromUrl) : null;
   
   const [formData, setFormData] = useState({
-    clienteId: clienteIdFromUrl || "",
-    tipoImovel: "",
-    outroTipoImovel: "",
+    clienteId: "",
+    tipoImovel: "Apartamento",
     endereco: "",
-    valor: "",
-    dataVenda: new Date().toISOString().substring(0, 10),
-    comissaoImobiliaria: "",
-    comissaoCorretor: "",
+    valor: "0,00",
+    dataVenda: new Date().toISOString().slice(0, 10),
+    comissaoImobiliaria: "0",
+    comissaoCorretor: "0",
     observacoes: ""
   });
   
-  // Salvar o cliente original para poder voltar à página dele após salvar
-  const [clienteOriginalId, setClienteOriginalId] = useState(clienteIdFromUrl);
+  const [clienteSelecionado, setClienteSelecionado] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Se o clienteId mudar na URL, atualizar o formData
   useEffect(() => {
-    if (clienteIdFromUrl) {
-      setFormData(prev => ({ ...prev, clienteId: clienteIdFromUrl }));
-      setClienteOriginalId(clienteIdFromUrl);
+    // Preenche o clienteId da URL se existir
+    const params = new URLSearchParams(window.location.search);
+    const clienteId = params.get("cliente");
+    if (clienteId) {
+      setFormData(prev => ({ ...prev, clienteId }));
+      const cliente = clientes.find(c => c.id === clienteId);
+      setClienteSelecionado(cliente);
     }
-  }, [clienteIdFromUrl]);
+  }, [clientes]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -63,82 +50,56 @@ const NovaVenda = () => {
     }));
   };
   
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validações básicas
-    if (!formData.clienteId || !formData.tipoImovel || !formData.endereco || !formData.valor) {
+    if (!formData.clienteId || !formData.tipoImovel || !formData.endereco || !formData.valor || !formData.dataVenda) {
       toast({
         variant: "destructive",
         title: "Dados incompletos",
-        description: "Por favor, preencha todos os campos obrigatórios."
+        description: "Preencha todos os campos obrigatórios."
       });
       return;
     }
     
-    // Converter valor para número
-    const valorNumerico = parseFloat(formData.valor.replace(/[^0-9,]/g, '').replace(',', '.'));
-    
-    const clienteSelecionado = clientes.find(c => c.id === formData.clienteId);
-    if (!clienteSelecionado) {
+    try {
+      setIsSubmitting(true);
+      
+      // Adjust the venda object to match the updated interface
+      const resultado = await adicionarVenda({
+        clienteId: formData.clienteId,
+        tipoImovel: formData.tipoImovel,
+        endereco: formData.endereco,
+        valor: parseFloat(formData.valor.replace(/\D/g, "")) / 100,
+        dataVenda: formData.dataVenda,
+        comissao_imobiliaria: parseFloat(formData.comissaoImobiliaria || "0"),
+        comissao_corretor: parseFloat(formData.comissaoCorretor || "0"),
+        observacoes: formData.observacoes,
+        comissao: 0, // Add default value for compatibility
+        corretor: "", // Add default value for compatibility
+      }, clienteSelecionado?.nome || "");
+      
+      if (resultado) {
+        toast({
+          title: "Venda cadastrada!",
+          description: "A nova venda foi cadastrada com sucesso."
+        });
+        navigate("/vendas");
+      } else {
+        throw new Error("Falha ao cadastrar venda");
+      }
+    } catch (error) {
+      console.error("Erro ao cadastrar venda:", error);
       toast({
         variant: "destructive",
-        title: "Cliente não encontrado",
-        description: "O cliente selecionado não foi encontrado."
+        title: "Erro ao cadastrar",
+        description: "Não foi possível cadastrar a venda. Tente novamente."
       });
-      return;
-    }
-    
-    const dataVendaString = formData.dataVenda;
-    
-    const novaVenda = {
-      clienteId: formData.clienteId,
-      tipoImovel: formData.tipoImovel === 'Outro' ? formData.outroTipoImovel : formData.tipoImovel,
-      endereco: formData.endereco,
-      valor: valorNumerico,
-      dataVenda: dataVendaString,
-      comissao_imobiliaria: formData.comissaoImobiliaria ? parseFloat(formData.comissaoImobiliaria.replace(/[^0-9,]/g, '').replace(',', '.')) : undefined,
-      comissao_corretor: formData.comissaoCorretor ? parseFloat(formData.comissaoCorretor.replace(/[^0-9,]/g, '').replace(',', '.')) : undefined,
-      observacoes: formData.observacoes
-    };
-    
-    const vendaAdicionada = await adicionarVenda(novaVenda, clienteSelecionado.nome);
-    
-    if (vendaAdicionada) {
-      toast({
-        title: "Venda registrada!",
-        description: "A nova venda foi registrada com sucesso.",
-        variant: "success"
-      });
-      
-      // Se veio de um cliente específico, voltar para ele
-      if (clienteOriginalId) {
-        navigate(`/clientes/${clienteOriginalId}`);
-      } else {
-        navigate("/vendas");
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  // Formatar valor para exibição ao digitar
-  const formatarValorInput = (valor: string): string => {
-    // Remove caracteres não numéricos
-    const apenasNumeros = valor.replace(/\D/g, "");
-    
-    if (!apenasNumeros) return "";
-    
-    // Converte para número e formata
-    const numero = parseFloat(apenasNumeros) / 100;
-    return formatarMoeda(numero).replace("R$", "").trim();
-  };
-  
+
   return (
     <div className="space-y-6">
       <div className="flex items-center">
@@ -148,7 +109,7 @@ const NovaVenda = () => {
         </Button>
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Nova Venda</h2>
-          <p className="text-slate-500">Registre uma nova venda de imóvel.</p>
+          <p className="text-slate-500">Adicione uma nova venda ao sistema.</p>
         </div>
       </div>
       
@@ -156,93 +117,65 @@ const NovaVenda = () => {
         <form onSubmit={handleSubmit}>
           <CardContent className="pt-6">
             <div className="grid gap-6 md:grid-cols-2">
-              {/* Dados do cliente */}
+              {/* Dados básicos */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="clienteId">Cliente <span className="text-red-500">*</span></Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("clienteId", value)}
+                  <select
+                    id="clienteId"
+                    name="clienteId"
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                     value={formData.clienteId}
-                    disabled={!!clienteIdFromUrl} // Desabilitar se um cliente já estiver pré-selecionado
+                    onChange={handleChange}
+                    required
                   >
-                    <SelectTrigger id="clienteId">
-                      <SelectValue placeholder="Selecione um cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map(cliente => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {clienteFromUrl && (
-                    <p className="text-xs text-slate-500">Cliente pré-selecionado: {clienteFromUrl.nome}</p>
-                  )}
+                    <option value="">Selecione um cliente</option>
+                    {clientes.map(cliente => (
+                      <option key={cliente.id} value={cliente.id}>{cliente.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="tipoImovel">Tipo de Imóvel <span className="text-red-500">*</span></Label>
-                  <Select
-                    onValueChange={(value) => handleSelectChange("tipoImovel", value)}
+                  <select
+                    id="tipoImovel"
+                    name="tipoImovel"
+                    className="w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                     value={formData.tipoImovel}
+                    onChange={handleChange}
+                    required
                   >
-                    <SelectTrigger id="tipoImovel">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tiposImoveis.map(tipo => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {tipo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formData.tipoImovel === 'Outro' && (
-                    <Input
-                      id="outroTipoImovel"
-                      name="outroTipoImovel"
-                      placeholder="Descreva o tipo de imóvel"
-                      value={formData.outroTipoImovel}
-                      onChange={handleChange}
-                      required
-                      className="mt-2"
-                    />
-                  )}
+                    <option value="Apartamento">Apartamento</option>
+                    <option value="Casa">Casa</option>
+                    <option value="Terreno">Terreno</option>
+                    <option value="Sala Comercial">Sala Comercial</option>
+                    <option value="Galpão">Galpão</option>
+                  </select>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="endereco">Endereço do Imóvel <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endereco">Endereço <span className="text-red-500">*</span></Label>
                   <Input
                     id="endereco"
                     name="endereco"
-                    placeholder="Ex: Rua das Flores, 123, Bairro"
+                    placeholder="Ex: Rua das Flores, 123"
                     value={formData.endereco}
                     onChange={handleChange}
                     required
                   />
                 </div>
-              </div>
-              
-              {/* Dados da venda */}
-              <div className="space-y-4">
+                
                 <div className="space-y-2">
                   <Label htmlFor="valor">Valor da Venda (R$) <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2">R$</span>
-                    <Input
-                      id="valor"
-                      name="valor"
-                      className="pl-10"
-                      placeholder="Ex: 450.000,00"
-                      value={formData.valor}
-                      onChange={(e) => {
-                        const valorFormatado = formatarValorInput(e.target.value);
-                        setFormData(prev => ({ ...prev, valor: valorFormatado }));
-                      }}
-                      required
-                    />
-                  </div>
+                  <Input
+                    id="valor"
+                    name="valor"
+                    placeholder="Ex: 1.200,00"
+                    value={formData.valor}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 
                 <div className="space-y-2">
@@ -256,29 +189,29 @@ const NovaVenda = () => {
                     required
                   />
                 </div>
-                
+              </div>
+              
+              {/* Comissões e Observações */}
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="comissaoImobiliaria">Comissão da Imobiliária (R$)</Label>
+                  <Label htmlFor="comissaoImobiliaria">Comissão Imobiliária (R$)</Label>
                   <Input
                     id="comissaoImobiliaria"
                     name="comissaoImobiliaria"
-                    placeholder="Ex: 10.000,00"
+                    placeholder="Ex: 15.000,00"
                     value={formData.comissaoImobiliaria}
                     onChange={handleChange}
-                    className="pl-2"
-                    type="text"
                   />
                 </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="comissaoCorretor">Comissão do Corretor (R$)</Label>
+                  <Label htmlFor="comissaoCorretor">Comissão Corretor (R$)</Label>
                   <Input
                     id="comissaoCorretor"
                     name="comissaoCorretor"
-                    placeholder="Ex: 4.500,00"
+                    placeholder="Ex: 7.500,00"
                     value={formData.comissaoCorretor}
                     onChange={handleChange}
-                    className="pl-2"
-                    type="text"
                   />
                 </div>
                 
@@ -287,7 +220,7 @@ const NovaVenda = () => {
                   <Textarea
                     id="observacoes"
                     name="observacoes"
-                    placeholder="Detalhes sobre a negociação, condições especiais, etc."
+                    placeholder="Adicione observações relevantes sobre a venda"
                     rows={5}
                     value={formData.observacoes}
                     onChange={handleChange}
@@ -298,23 +231,25 @@ const NovaVenda = () => {
           </CardContent>
           
           <CardFooter className="flex justify-between border-t bg-slate-50 p-4">
-            <Button 
-              variant="outline" 
-              type="button" 
-              onClick={() => {
-                if (clienteOriginalId) {
-                  navigate(`/clientes/${clienteOriginalId}`);
-                } else {
-                  navigate("/vendas");
-                }
-              }}
-            >
+            <Button variant="outline" type="button" onClick={() => navigate("/vendas")} disabled={isSubmitting}>
               <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>
-            <Button type="submit">
-              <Save className="mr-2 h-4 w-4" />
-              Registrar Venda
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar Venda
+                </>
+              )}
             </Button>
           </CardFooter>
         </form>

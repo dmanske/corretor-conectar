@@ -76,8 +76,12 @@ const ComissaoForm = ({
         if (venda) {
           setNovaComissao(prev => ({
             ...prev,
-            valorComissaoImobiliaria: prev.valorComissaoImobiliaria && prev.valorComissaoImobiliaria > 0 ? prev.valorComissaoImobiliaria : venda.comissao_imobiliaria || 0,
-            valorComissaoCorretor: prev.valorComissaoCorretor && prev.valorComissaoCorretor > 0 ? prev.valorComissaoCorretor : venda.comissao_corretor || 0,
+            valorComissaoImobiliaria: prev.valorComissaoImobiliaria && prev.valorComissaoImobiliaria > 0 
+              ? prev.valorComissaoImobiliaria 
+              : venda.comissao_imobiliaria || venda.comissao || 0,
+            valorComissaoCorretor: prev.valorComissaoCorretor && prev.valorComissaoCorretor > 0 
+              ? prev.valorComissaoCorretor 
+              : venda.comissao_corretor || 0,
           }));
         }
       }

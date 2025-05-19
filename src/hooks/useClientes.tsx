@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,7 +40,7 @@ export const useClientes = () => {
             nome: cliente.nome,
             endereco: cliente.endereco || "",
             complemento: cliente.complemento || "",
-            numero: cliente.numero || "",
+            numero: cliente.numero || "", // Handle the numero property
             telefone: cliente.telefone || "",
             cidade: cliente.cidade || "",
             estado: cliente.estado || "",
@@ -52,7 +51,7 @@ export const useClientes = () => {
             cep: cliente.cep || "",
             createdAt: cliente.created_at || "",
             updatedAt: cliente.updated_at || "",
-            isPremium: cliente.is_premium || false
+            isPremium: cliente.is_premium || false // Handle the isPremium property
           }));
           
           setClientes(clientesFormatados);
@@ -82,6 +81,7 @@ export const useClientes = () => {
           nome: cliente.nome,
           endereco: cliente.endereco,
           complemento: cliente.complemento,
+          numero: cliente.numero, // Include the numero property
           telefone: cliente.telefone,
           cidade: cliente.cidade,
           estado: cliente.estado,
@@ -104,6 +104,7 @@ export const useClientes = () => {
           nome: data[0].nome,
           endereco: data[0].endereco || "",
           complemento: data[0].complemento || "",
+          numero: data[0].numero || "", // Include the numero property
           telefone: data[0].telefone || "",
           cidade: data[0].cidade || "",
           estado: data[0].estado || "",
