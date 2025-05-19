@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { 
   Menu,
   ChevronLeft,
@@ -11,9 +12,16 @@ import useAuth from "@/hooks/useAuth";
 
 const Layout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await logout();
   };
 
   return (
@@ -35,6 +43,17 @@ const Layout = () => {
           <h1 className="text-xl font-semibold text-slate-800 flex-1">
             Corretor Conecta
           </h1>
+          {user && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              title="Sair"
+              className="ml-2"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
+          )}
         </header>
         
         {/* Main content */}
