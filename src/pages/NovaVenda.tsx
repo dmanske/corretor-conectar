@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Save, X, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ const NovaVenda = () => {
     }
   }, [clientes]);
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -70,12 +71,13 @@ const NovaVenda = () => {
         clienteId: formData.clienteId,
         tipoImovel: formData.tipoImovel,
         endereco: formData.endereco,
+        enderecoImovel: formData.endereco, // Add enderecoImovel for backwards compatibility
         valor: parseFloat(formData.valor.replace(/\D/g, "")) / 100,
         dataVenda: formData.dataVenda,
         comissao_imobiliaria: parseFloat(formData.comissaoImobiliaria || "0"),
         comissao_corretor: parseFloat(formData.comissaoCorretor || "0"),
         observacoes: formData.observacoes,
-        comissao: 0, // Add default value for compatibility
+        comissao: parseFloat(formData.comissaoImobiliaria || "0"), // For backwards compatibility
         corretor: "", // Add default value for compatibility
       }, clienteSelecionado?.nome || "");
       
