@@ -304,7 +304,7 @@ const Landing = () => {
               variants={fadeInUp}
               whileHover="hover"
               initial="rest"
-              variants={cardHover}
+              animate="rest"
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-emerald-400/20">
                 <FaUserPlus size={28} />
@@ -321,7 +321,7 @@ const Landing = () => {
               variants={fadeInUp}
               whileHover="hover"
               initial="rest"
-              variants={cardHover}
+              animate="rest"
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-blue-400/20">
                 <FaChartLine size={28} />
@@ -338,7 +338,7 @@ const Landing = () => {
               variants={fadeInUp}
               whileHover="hover"
               initial="rest"
-              variants={cardHover}
+              animate="rest"
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-purple-400/20">
                 <FaBirthdayCake size={28} />
@@ -355,7 +355,7 @@ const Landing = () => {
               variants={fadeInUp}
               whileHover="hover"
               initial="rest"
-              variants={cardHover}
+              animate="rest"
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-teal-400/20">
                 <FaFileAlt size={28} />
@@ -372,7 +372,7 @@ const Landing = () => {
               variants={fadeInUp}
               whileHover="hover"
               initial="rest"
-              variants={cardHover}
+              animate="rest"
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-amber-400/20">
                 <FaMoneyBillWave size={28} />
@@ -389,7 +389,7 @@ const Landing = () => {
               variants={fadeInUp}
               whileHover="hover"
               initial="rest"
-              variants={cardHover}
+              animate="rest"
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center mb-4 text-white shadow-lg shadow-indigo-400/20">
                 <FaDesktop size={28} />
@@ -854,3 +854,4 @@ const Landing = () => {
 };
 
 export default Landing;
+
