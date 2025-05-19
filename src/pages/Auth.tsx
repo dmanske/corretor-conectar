@@ -1,10 +1,10 @@
 
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { AuthContainer } from "@/components/auth/AuthContainer";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { RegisterForm } from "@/components/auth/RegisterForm";
-import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
+import AuthContainer from "@/components/auth/AuthContainer";
+import LoginForm from "@/components/auth/LoginForm";
+import RegisterForm from "@/components/auth/RegisterForm";
+import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "./Landing";
 
