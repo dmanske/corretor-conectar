@@ -6,17 +6,23 @@ import {
   Home,
   Calendar,
   CircleDollarSign,
-  LogOut
+  LogOut,
+  Menu,
+  ChevronLeft
 } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
   collapsed: boolean;
+  toggleSidebar: () => void;
+  sidebarCollapsed: boolean;
+  user: any;
+  handleLogout: (e: React.MouseEvent) => void;
 }
 
-const Sidebar = ({ collapsed }: SidebarProps) => {
-  const { user, logout } = useAuth();
+const Sidebar = ({ collapsed, toggleSidebar, sidebarCollapsed, user, handleLogout }: SidebarProps) => {
+  const { logout } = useAuth();
 
   const navItems = [
     {
@@ -46,12 +52,6 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
     }
   ];
 
-  const handleLogout = () => {
-    logout();
-    const button = document.activeElement as HTMLButtonElement;
-    if (button) button.disabled = true;
-  };
-
   return (
     <aside 
       className={cn(
@@ -59,21 +59,38 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
         collapsed ? "w-16" : "w-64"
       )}
     >
-      {/* Logo */}
+      {/* Logo + Minimizar */}
       <div className={cn(
         "h-16 flex items-center border-b border-slate-200 transition-all duration-300 shrink-0",
-        collapsed ? "justify-center px-2" : "justify-center px-6"
+        collapsed ? "justify-center px-2" : "justify-between px-6"
       )}>
         {collapsed ? (
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-            CC
-          </div>
-        ) : (
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleSidebar}
+            className="p-0"
+          >
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
               CC
             </div>
-            <span className="text-xl font-bold text-slate-800">Corretor Conecta</span>
+          </Button>
+        ) : (
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold mr-3">
+                CC
+              </div>
+              <span className="text-xl font-bold text-slate-800">ConectaPro</span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSidebar}
+              className="ml-2"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
           </div>
         )}
       </div>
@@ -120,23 +137,21 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
             <LogOut className="h-5 w-5 text-slate-700" />
           </Button>
         ) : (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 overflow-hidden">
-              {user?.user_metadata?.avatar_url ? (
-                <img
-                  src={user.user_metadata.avatar_url}
-                  alt="Foto do usuário"
-                  className="w-8 h-8 rounded-full border border-slate-300 object-cover shrink-0"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shrink-0">
-                  <Users className="h-5 w-5" /> 
-                </div>
-              )}
-              <span className="text-sm text-slate-700 font-medium truncate">
-                {user?.user_metadata?.name || user?.email || "Usuário"}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 overflow-hidden">
+            {user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt="Foto do usuário"
+                className="w-8 h-8 rounded-full border border-slate-300 object-cover shrink-0"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shrink-0">
+                <Users className="h-5 w-5" /> 
+              </div>
+            )}
+            <span className="text-sm text-slate-800 font-medium truncate">
+              {user?.user_metadata?.name || user?.email || "Usuário"}
+            </span>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -144,7 +159,7 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
               title="Sair"
               className="shrink-0"
             >
-              <LogOut className="h-5 w-5 text-slate-700" />
+              <LogOut className="h-5 w-5 text-slate-800" />
             </Button>
           </div>
         )}
