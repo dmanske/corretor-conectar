@@ -1,12 +1,18 @@
-
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { 
+  Menu,
+  ChevronLeft,
+  LogOut
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Sidebar from "./Sidebar";
 import useAuth from "@/hooks/useAuth";
 
 const Layout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { logout, user } = useAuth();
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);

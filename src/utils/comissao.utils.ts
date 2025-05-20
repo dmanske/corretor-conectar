@@ -1,93 +1,110 @@
 
-export const obterNomeMes = (mes: number) => {
-  const meses = [
-    'janeiro',
-    'fevereiro',
-    'março',
-    'abril',
-    'maio',
-    'junho',
-    'julho',
-    'agosto',
-    'setembro',
-    'outubro',
-    'novembro',
-    'dezembro'
+/**
+ * Função para formatar valores monetários para exibição no PDF
+ */
+export const formatarMoedaParaPDF = (valor: number): string => {
+  return valor.toLocaleString('pt-BR', { 
+    style: 'currency', 
+    currency: 'BRL', 
+    minimumFractionDigits: 2 
+  });
+};
+
+/**
+ * Função para formatar datas para exibição no PDF
+ */
+export const formatarDataParaPDF = (dataString: string | null | undefined): string => {
+  if (!dataString) return "N/A";
+  try {
+    return new Date(dataString).toLocaleDateString('pt-BR');
+  } catch {
+    return "Data inválida";
+  }
+};
+
+/**
+ * Função para obter o nome do mês a partir do número
+ */
+export const obterNomeMes = (mes: number): string => {
+  const nomesDosMeses = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
-  
-  // Ajusta o índice para 0-11
-  const indiceMes = mes - 1;
-  
-  if (indiceMes >= 0 && indiceMes < meses.length) {
-    return meses[indiceMes];
-  }
-  
-  // Para meta anual, onde mes=0
-  if (mes === 0) {
-    return 'anual';
-  }
-  
-  return '';
+  return nomesDosMeses[mes - 1] || "";
 };
 
 /**
- * Formata uma data para exibição em PDF no formato dd/mm/yyyy
- * @param data - String de data ou objeto Date
- */
-export const formatarDataParaPDF = (data: string | Date | undefined): string => {
-  if (!data) return '-';
-  
-  try {
-    const dataObj = typeof data === 'string' ? new Date(data) : data;
-    
-    // Verificar se a data é válida
-    if (isNaN(dataObj.getTime())) return '-';
-    
-    const dia = dataObj.getDate().toString().padStart(2, '0');
-    const mes = (dataObj.getMonth() + 1).toString().padStart(2, '0');
-    const ano = dataObj.getFullYear();
-    
-    return `${dia}/${mes}/${ano}`;
-  } catch (error) {
-    console.error('Erro ao formatar data:', error);
-    return '-';
-  }
-};
-
-/**
- * Formata um valor monetário para exibição em PDF no formato R$ X.XXX,XX
- * @param valor - Valor numérico
- */
-export const formatarMoedaParaPDF = (valor: number | undefined): string => {
-  if (valor === undefined || valor === null) return 'R$ 0,00';
-  
-  try {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(valor);
-  } catch (error) {
-    console.error('Erro ao formatar moeda:', error);
-    return 'R$ 0,00';
-  }
-};
-
-/**
- * Escapa caracteres especiais em strings para CSV
- * @param value - Valor para escapar
+ * Função para escapar campos CSV
  */
 export const escapeCSV = (value: any): string => {
   if (value === null || value === undefined) return '';
-  
-  const stringValue = String(value);
-  
-  // Se contém vírgula, aspas duplas ou quebra de linha, envolve em aspas
-  if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-    // Substitui aspas duplas por duas aspas duplas
-    return `"${stringValue.replace(/"/g, '""')}"`;
+  let str = String(value);
+  if (str.includes('"')) str = str.replace(/"/g, '""');
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    str = '"' + str + '"';
   }
+  return str;
+};
+
+/**
+ * Calcula dias entre duas datas
+ */
+export const calcularDiasEntreDatas = (data1: string | null, data2: string | null): number => {
+  if (!data1 || !data2) return 0;
   
-  return stringValue;
+  try {
+    const d1 = new Date(data1);
+    const d2 = new Date(data2);
+    const diffTime = Math.abs(d2.getTime() - d1.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Calcula dias em atraso
+ */
+export const calcularDiasEmAtraso = (dataVencimento: string | null): number => {
+  if (!dataVencimento) return 0;
+  
+  try {
+    const hoje = new Date();
+    const vencimento = new Date(dataVencimento);
+    
+    if (hoje <= vencimento) return 0;
+    
+    const diffTime = Math.abs(hoje.getTime() - vencimento.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Formata valores de porcentagem
+ */
+export const formatarPorcentagem = (valor: number, casasDecimais: number = 1): string => {
+  return valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: casasDecimais,
+    maximumFractionDigits: casasDecimais
+  }) + '%';
+};
+
+/**
+ * Calcula a data estimada de pagamento baseada na data da venda
+ */
+export const calcularDataEstimadaPagamento = (dataVenda: string | null): string | null => {
+  if (!dataVenda) return null;
+  
+  try {
+    // Adiciona 30 dias à data da venda como estimativa
+    const data = new Date(dataVenda);
+    data.setDate(data.getDate() + 30);
+    return data.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+  } catch {
+    return null;
+  }
 };
