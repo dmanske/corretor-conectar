@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -96,7 +97,7 @@ const Sidebar = ({ collapsed, toggleSidebar, sidebarCollapsed, user, handleLogou
       </div>
 
       {/* Navigation */}
-      <nav className="mt-6 px-2 flex-grow">
+      <nav className="mt-6 px-2 flex-grow overflow-y-auto">
         <ul className="space-y-1">
           {navItems.map((item) => (
             <li key={item.path}>

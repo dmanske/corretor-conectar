@@ -47,10 +47,16 @@ export const useComissoes = () => {
   } = useQueryComissoes(comissoes);
 
   const { 
-    atualizarMeta, 
+    atualizarMeta,
+    atualizarMetaAnual,
     getMetaMensal, 
-    getTotalRecebidoPorMesAno 
-  } = useMetaComissoes(user?.id, mesAtual, anoAtual, setMetaComissao, toast);
+    getTotalRecebidoPorMesAno,
+    buscarTotalRecebidoAno,
+    metaAnual,
+    metasDoAno,
+    recebimentosPorMes,
+    aReceberPorMes
+  } = useMetaComissoes(user?.id, mesAtual, anoAtual, setMetaComissao, toast, comissoes);
 
   const { 
     parcelasPendentes, 
@@ -72,6 +78,10 @@ export const useComissoes = () => {
     comissoes,
     parcelasPendentes,
     metaComissao,
+    metaAnual,
+    metasDoAno,
+    recebimentosPorMes,
+    aReceberPorMes,
     isLoading,
     isLoadingParcelas,
     mesAtual,
@@ -91,9 +101,11 @@ export const useComissoes = () => {
     
     // Meta management
     atualizarMeta,
+    atualizarMetaAnual,
     getMetaMensal,
     alterarPeriodoAtual,
     getTotalRecebidoPorMesAno,
+    buscarTotalRecebidoAno,
     
     // Calculations and utils
     totais,

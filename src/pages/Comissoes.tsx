@@ -1,10 +1,10 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Download, PlusCircle, Cog, Loader2, BarChart3, CheckCircle, AlertTriangle, XCircle, TrendingUp, DollarSign, Clock, Target, Star } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ReferenceLine, CartesianGrid, Cell, LineChart, Line } from 'recharts';
+import { Download, PlusCircle, Cog, Loader2, BarChart3, CheckCircle, AlertTriangle, XCircle, TrendingUp, DollarSign, Clock, Target } from "lucide-react";
 
 // Custom hooks and components
 import { useComissoes } from "@/hooks/useComissoes";
@@ -13,6 +13,8 @@ import ComissoesSummary from "@/components/comissoes/ComissoesSummary";
 import ComissaoTable from "@/components/comissoes/ComissaoTable";
 import ComissaoForm from "@/components/comissoes/ComissaoForm";
 import ExportDialog from "@/components/comissoes/ExportDialog";
+import RelatorioAnualComissoes from "@/components/comissoes/RelatorioAnualComissoes";
+import MetaAnualDialog from "@/components/comissoes/MetaAnualDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Comissao } from "@/hooks/useComissoes";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,231 +38,6 @@ const mesesNomesCompletos = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-// Novo componente de resumo anual
-const ResumoAnualComissoes = ({ ano, comissoes, metasAno, recebimentosPorMes, aReceberPorMes }) => {
-  // Array de meses
-  const mesesNomes = [
-    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-    "Jul", "Ago", "Set", "Out", "Nov", "Dez"
-  ];
-
-  // Monta array de metas mensais
-  const metasMensais = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 12; i++) {
-      const meta = metasAno.find(m => m.mes === i + 1);
-      // Soma vendas do mês
-      const vendasMes = comissoes.filter(c => {
-        if (!c.dataVenda) return false;
-        const data = new Date(c.dataVenda);
-        return data.getFullYear() === ano && data.getMonth() === i;
-      });
-      const vendido = vendasMes.reduce((acc, c) => acc + (c.valorVenda || 0), 0);
-      const percentual = meta && meta.valor > 0 ? (vendido / meta.valor) * 100 : 0;
-      arr.push({
-        mes: i,
-        nome: mesesNomesCompletos[i],
-        meta: meta ? meta.valor : null,
-        vendido,
-        percentual
-      });
-    }
-    return arr;
-  }, [ano, comissoes, metasAno]);
-
-  // Resumo geral
-  const totalVendido = comissoes.filter(c => c.dataVenda && new Date(c.dataVenda).getFullYear() === ano).reduce((acc, c) => acc + (c.valorVenda || 0), 0);
-  const totalComissao = comissoes.filter(c => c.dataVenda && new Date(c.dataVenda).getFullYear() === ano).reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
-  const totalRecebido = comissoes.filter(c => c.dataVenda && new Date(c.dataVenda).getFullYear() === ano && c.status?.toLowerCase() === "recebido").reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
-  const totalPendente = comissoes.filter(c => c.dataVenda && new Date(c.dataVenda).getFullYear() === ano && (c.status?.toLowerCase() === "pendente" || c.status?.toLowerCase() === "parcial")).reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0);
-  const metaAnual = metasAno.reduce((acc, m) => acc + (m.valor || 0), 0);
-  const percentualAnual = metaAnual > 0 ? (totalVendido / metaAnual) * 100 : 0;
-  const mediaMensal = metasAno.length > 0 ? totalVendido / metasAno.length : 0;
-  const melhorMes = metasMensais.reduce((max, m) => m.vendido > max.vendido ? m : max, { vendido: 0 });
-
-  // Dados para o gráfico
-  const dadosGrafico = metasMensais.map(m => ({
-    mes: m.nome,
-    Vendido: m.vendido,
-    Meta: m.meta || 0
-  }));
-
-  // Dados para o gráfico de linha de vendas
-  const dadosLinhaVendas = metasMensais.map(m => ({ mes: m.nome, Vendido: m.vendido }));
-
-  return (
-    <div className="space-y-6 mb-6">
-      {/* Cards coloridos e modernos de resumo geral */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
-        <div className="bg-gradient-to-br from-blue-200 to-blue-50 border border-blue-200 rounded-2xl p-5 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-2 text-blue-700 font-semibold uppercase text-xs mb-1">
-            <TrendingUp className="w-5 h-5" /> Total vendido
-          </div>
-          <div className="text-3xl font-extrabold text-blue-900">{totalVendido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-        </div>
-        <div className="bg-gradient-to-br from-green-200 to-green-50 border border-green-200 rounded-2xl p-5 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-2 text-green-700 font-semibold uppercase text-xs mb-1">
-            <CheckCircle className="w-5 h-5" /> Comissões recebidas
-          </div>
-          <div className="text-3xl font-extrabold text-green-900">{totalRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-200 to-yellow-50 border border-yellow-200 rounded-2xl p-5 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-2 text-yellow-700 font-semibold uppercase text-xs mb-1">
-            <Clock className="w-5 h-5" /> Comissões pendentes
-          </div>
-          <div className="text-3xl font-extrabold text-yellow-900">{totalPendente.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
-        <div className="bg-gradient-to-br from-purple-200 to-purple-50 border border-purple-200 rounded-2xl p-5 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-2 text-purple-700 font-semibold uppercase text-xs mb-1">
-            <Target className="w-5 h-5" /> Meta anual
-          </div>
-          <div className="text-3xl font-extrabold text-purple-900">{metaAnual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-        </div>
-        <div className="bg-gradient-to-br from-cyan-200 to-cyan-50 border border-cyan-200 rounded-2xl p-5 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-2 text-cyan-700 font-semibold uppercase text-xs mb-1">
-            <BarChart3 className="w-5 h-5" /> Média mensal
-          </div>
-          <div className="text-3xl font-extrabold text-cyan-900">{mediaMensal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-        </div>
-        <div className="bg-gradient-to-br from-pink-200 to-pink-50 border border-pink-200 rounded-2xl p-5 flex flex-col gap-2 shadow-md hover:shadow-lg transition-shadow">
-          <div className="flex items-center gap-2 text-pink-700 font-semibold uppercase text-xs mb-1">
-            <Star className="w-5 h-5" /> Melhor mês
-          </div>
-          <div className="text-3xl font-extrabold text-pink-900">{melhorMes.nome} ({melhorMes.vendido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})</div>
-        </div>
-      </div>
-      {/* Barra de progresso da meta anual */}
-      <div className="bg-white border rounded-lg p-4 shadow-sm flex flex-col gap-2 mb-2">
-        <div className="text-xs text-slate-500 mb-1">Percentual da meta anual atingido</div>
-        <div className="flex items-center gap-2">
-          <div className="w-40 h-3 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-500" style={{ width: `${Math.min(percentualAnual, 100)}%` }}></div>
-          </div>
-          <span className="font-bold text-blue-700">{percentualAnual.toFixed(1)}%</span>
-        </div>
-      </div>
-      {/* Gráfico de linha de vendas sobe e desce */}
-      <div className="bg-white border rounded-lg p-4 shadow-sm mb-4">
-        <div className="text-base font-semibold mb-2">Evolução das Vendas no Ano</div>
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={dadosLinhaVendas} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="mes" stroke="#888" fontSize={13} tickLine={false} axisLine={false} />
-            <YAxis stroke="#888" fontSize={13} tickFormatter={v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} axisLine={false} tickLine={false} />
-            <Tooltip formatter={v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-            <Line type="monotone" dataKey="Vendido" stroke="#2563eb" strokeWidth={3} dot={{ r: 5, fill: '#2563eb' }} activeDot={{ r: 7 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      {/* Gráfico de barras Vendas x Meta por mês */}
-      <div className="bg-white border rounded-lg p-4 shadow-sm">
-        <div className="text-base font-semibold mb-2">Vendas x Meta por mês</div>
-        <div className="w-full" style={{ minHeight: 220, height: '30vw', maxHeight: 340 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dadosGrafico} margin={{ top: 10, right: 20, left: 0, bottom: 0 }} barCategoryGap={20}>
-              <defs>
-                <linearGradient id="barVendido" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#2563eb" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.7} />
-                </linearGradient>
-                <linearGradient id="barMeta" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a21caf" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#f472b6" stopOpacity={0.7} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="mes" stroke="#888" fontSize={13} tickLine={false} axisLine={false} />
-              <YAxis stroke="#888" fontSize={13} tickFormatter={v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9' }} />
-              <Legend iconType="circle" wrapperStyle={{ fontSize: 13 }} />
-              <Bar dataKey="Vendido" name="Vendido" fill="url(#barVendido)" radius={[8, 8, 0, 0]} maxBarSize={32} />
-              <Bar dataKey="Meta" name="Meta" fill="url(#barMeta)" radius={[8, 8, 0, 0]} maxBarSize={32} />
-              <ReferenceLine y={metaAnual / 12} stroke="#a21caf" strokeDasharray="3 3" label={{ value: 'Média Meta', position: 'top', fill: '#a21caf', fontSize: 11 }} ifOverflow="extendDomain" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      {/* Tabela de Metas Mensais estilizada */}
-      <div className="bg-white border rounded-lg p-4 shadow-sm">
-        <div className="text-base font-bold mb-2 font-display text-slate-700">Resumo do Ano</div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm font-sans">
-            <thead>
-              <tr className="text-slate-600 text-base border-b">
-                <th className="px-3 py-2 text-left font-bold">Mês</th>
-                <th className="px-3 py-2 text-left font-bold">Meta</th>
-                <th className="px-3 py-2 text-left font-bold">Vendido</th>
-                <th className="px-3 py-2 text-left font-bold">Recebido</th>
-                <th className="px-3 py-2 text-left font-bold">Pendente</th>
-                <th className="px-3 py-2 text-left font-bold">% Atingido</th>
-                <th className="px-3 py-2 text-left font-bold">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {metasMensais.map((m, idx) => (
-                <tr key={m.mes} className={idx % 2 === 0 ? 'bg-slate-50' : ''}>
-                  <td className="px-3 py-2 font-semibold text-slate-700 text-base">{m.nome}</td>
-                  <td className="px-3 py-2 text-blue-900 font-bold text-base">{m.meta !== null ? m.meta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : <span className="text-slate-400 font-normal">-</span>}</td>
-                  <td className="px-3 py-2 text-blue-700 font-bold text-base">{m.vendido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                  <td className="px-3 py-2 text-green-700 font-bold text-base">{recebimentosPorMes[m.mes]?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '-'}</td>
-                  <td className="px-3 py-2 text-yellow-700 font-bold text-base">{aReceberPorMes[m.mes]?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '-'}</td>
-                  <td className="px-3 py-2 text-purple-700 font-bold text-base">{m.meta !== null && m.meta > 0 ? `${m.percentual.toFixed(1)}%` : '-'}</td>
-                  <td className="px-3 py-2">
-                    {m.meta === null ? (
-                      <span className="text-slate-400 text-lg font-semibold">Sem meta</span>
-                    ) : m.percentual >= 100 ? (
-                      <span className="text-green-600 text-2xl font-bold">🟢</span>
-                    ) : m.percentual >= 70 ? (
-                      <span className="text-yellow-600 text-2xl font-bold">🟡</span>
-                    ) : (
-                      <span className="text-red-600 text-2xl font-bold">🔴</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Adicionar tipagem para o CustomTooltip
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
-}
-
-const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-md p-2 text-xs">
-        <div className="font-semibold mb-1">{label}</div>
-        <div><span className="text-blue-700 font-bold">Vendido:</span> {payload[0].value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-        <div><span className="text-purple-700 font-bold">Meta:</span> {payload[1].value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-      </div>
-    );
-  }
-  return null;
-};
-
-const barGradient = (
-  <defs>
-    <linearGradient id="barVendido" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="#2563eb" stopOpacity={0.9} />
-      <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.7} />
-    </linearGradient>
-    <linearGradient id="barMeta" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="#a21caf" stopOpacity={0.9} />
-      <stop offset="100%" stopColor="#f472b6" stopOpacity={0.7} />
-    </linearGradient>
-  </defs>
-);
-
 const Comissoes = () => {
   const { toast } = useToast();
   const { isAuthenticated, user } = useAuth();
@@ -269,6 +46,7 @@ const Comissoes = () => {
   const [periodo, setPeriodo] = useState("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [metaDialogOpen, setMetaDialogOpen] = useState(false);
+  const [metaAnualDialogOpen, setMetaAnualDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [comissaoParaEditar, setComissaoParaEditar] = useState<Comissao | null>(null);
   const hoje = new Date();
@@ -284,12 +62,17 @@ const Comissoes = () => {
   const { 
     comissoes, 
     metaComissao,
+    metaAnual,
+    metasDoAno,
+    recebimentosPorMes,
+    aReceberPorMes,
     isLoading,
     adicionarComissao, 
     atualizarComissao,
     marcarComoPago,
     excluirComissao,
     atualizarMeta,
+    atualizarMetaAnual,
     filtrarComissoes,
     totais,
     mesAtual,
@@ -300,19 +83,15 @@ const Comissoes = () => {
     adicionarRecebimento,
     calcularTotais,
     getTotalRecebidoPorMesAno,
+    buscarTotalRecebidoAno,
   } = useComissoes();
 
-  const [metaAnual, setMetaAnual] = useState(0);
   const [mediaMensalAtingida, setMediaMensalAtingida] = useState(0);
   const [percentualAtingidoAnual, setPercentualAtingidoAnual] = useState(0);
   const [iconeAtingido, setIconeAtingido] = useState(<CheckCircle className="w-5 h-5 text-green-500" />);
   const [corAtingido, setCorAtingido] = useState("text-green-600");
 
   const [mesesComMeta, setMesesComMeta] = useState<Set<number>>(new Set());
-
-  // Adicionar cálculo de recebidos e a receber por mês
-  const [recebimentosPorMes, setRecebimentosPorMes] = useState<{ [mes: number]: number }>({});
-  const [aReceberPorMes, setAReceberPorMes] = useState<{ [mes: number]: number }>({});
 
   const [order, setOrder] = useState('az');
 
@@ -322,6 +101,9 @@ const Comissoes = () => {
   // Adicionar estados para filtro por data inicial e final
   const [dataInicial, setDataInicial] = useState('');
   const [dataFinal, setDataFinal] = useState('');
+
+  // Novo estado para a visualização
+  const [modo, setModo] = useState<"mensal" | "anual">(mesSelecionado !== null ? "mensal" : "anual");
 
   // Limites de datas para os inputs
   let minData = '';
@@ -443,9 +225,6 @@ const Comissoes = () => {
       if (dataInicial && c.dataVenda < dataInicial) correspondeDataTela = false;
       if (dataFinal && c.dataVenda > dataFinal) correspondeDataTela = false;
       
-      // Para exportação, queremos itens que correspondam ao texto (se houver)
-      // E correspondam ao filtro de data da tela (se houver)
-      // O filtro de período principal virá do diálogo de exportação.
       return correspondeTexto && correspondeDataTela;
     });
 
@@ -457,7 +236,7 @@ const Comissoes = () => {
     });
     
     return lista;
-  }, [comissoes, tab, filtro, dataInicial, dataFinal, order]); // Removido mesSelecionado, anoAtual, hojeAtivo das dependências
+  }, [comissoes, tab, filtro, dataInicial, dataFinal, order]);
 
   // Calcular recebimentos para os cards e classificar comissões
   useEffect(() => {
@@ -543,7 +322,6 @@ const Comissoes = () => {
         .eq('ano', anoAtual)
         .eq('user_id', user.id);
       const metaAnual = (metas || []).reduce((acc, m) => acc + Number(m.valor || 0), 0);
-      setMetaAnual(metaAnual);
       // Total vendido no ano
       const totalVendasAno = comissoes
         .filter(c => c.dataVenda && new Date(c.dataVenda).getFullYear() === anoAtual)
@@ -572,7 +350,6 @@ const Comissoes = () => {
   }, [mesSelecionado, anoAtual, user, comissoes]);
 
   // Buscar metas do ano atual (já existe, mas agora vamos guardar o array de metas)
-  const [metasAno, setMetasAno] = useState<any[]>([]);
   useEffect(() => {
     async function buscarMetasAno() {
       if (!user) return;
@@ -585,10 +362,11 @@ const Comissoes = () => {
         console.error("Erro ao buscar metas:", error);
         return;
       }
-      setMetasAno(metas || []);
       const mesesComMetaSet = new Set<number>();
       metas?.forEach(meta => {
-        mesesComMetaSet.add(meta.mes - 1);
+        if (meta.mes > 0) { // Ignorar meta anual (mes=0)
+          mesesComMetaSet.add(meta.mes - 1);
+        }
       });
       setMesesComMeta(mesesComMetaSet);
     }
@@ -603,50 +381,19 @@ const Comissoes = () => {
         anosSet.add(new Date(c.dataVenda).getFullYear());
       }
     });
-    metasAno.forEach(m => {
-      if (m.ano) anosSet.add(m.ano);
-    });
-    return Array.from(anosSet).sort((a, b) => a - b);
-  }, [comissoes, metasAno]);
-
-  useEffect(() => {
-    async function calcularRecebimentosMesAno() {
-      const recMes: { [mes: number]: number } = {};
-      const pendMes: { [mes: number]: number } = {};
-      for (let i = 0; i < 12; i++) {
-        // Recebido: soma de todos os recebimentos do mês/ano
-        let recebido = 0;
-        let aReceber = 0;
-        // Filtra comissões do mês/ano
-        const comissoesMes = comissoes.filter(c => {
-          if (!c.dataVenda) return false;
-          const data = new Date(c.dataVenda);
-          return data.getFullYear() === anoAtual && data.getMonth() === i;
-        });
-        for (const c of comissoesMes) {
-          const recebimentos = await getRecebimentosByComissaoId(c.id);
-          // Recebido no mês: recebimentos cuja data é do mês/ano
-          const recebidosNoMes = recebimentos.filter(r => {
-            if (!r.data) return false;
-            const [yyyy, mm] = r.data.split('-');
-            return parseInt(yyyy) === anoAtual && parseInt(mm) === i + 1;
-          });
-          recebido += recebidosNoMes.reduce((acc, r) => acc + Number(r.valor || 0), 0);
-          // A receber: se pendente/parcial, soma o que falta
-          if (c.status?.toLowerCase() === 'pendente' || c.status?.toLowerCase() === 'parcial') {
-            const totalRecebido = recebimentos.reduce((acc, r) => acc + Number(r.valor || 0), 0);
-            aReceber += Math.max((c.valorComissaoCorretor || 0) - totalRecebido, 0);
-          }
-        }
-        recMes[i] = recebido;
-        pendMes[i] = aReceber;
-      }
-      setRecebimentosPorMes(recMes);
-      setAReceberPorMes(pendMes);
+    if (metasDoAno) {
+      metasDoAno.forEach(m => {
+        if (m.ano) anosSet.add(m.ano);
+      });
     }
-    calcularRecebimentosMesAno();
-    // eslint-disable-next-line
-  }, [comissoes, anoAtual, getRecebimentosByComissaoId]);
+    
+    // Se não houver anos nos dados, adicione o ano atual
+    if (anosSet.size === 0) {
+      anosSet.add(new Date().getFullYear());
+    }
+    
+    return Array.from(anosSet).sort((a, b) => a - b);
+  }, [comissoes, metasDoAno]);
 
   const handleExportarRelatorio = () => {
     setExportDialogOpen(true);
@@ -692,15 +439,6 @@ const Comissoes = () => {
   const handleExcluirComissao = (id: string) => {
     excluirComissao(id);
   };
-  
-  const gerarAnos = () => {
-    const anoAtual = new Date().getFullYear();
-    const anos = [];
-    for (let i = anoAtual - 2; i <= anoAtual + 2; i++) {
-      anos.push(i);
-    }
-    return anos;
-  };
 
   // Função para limpar todos os filtros
   function limparFiltros() {
@@ -709,6 +447,15 @@ const Comissoes = () => {
     setDataFinal('');
     setHojeAtivo(false);
   }
+
+  // Atualizar modo conforme seleção do mês
+  useEffect(() => {
+    if (mesSelecionado === null) {
+      setModo("anual");
+    } else {
+      setModo("mensal");
+    }
+  }, [mesSelecionado]);
 
   if (!isAuthenticated) {
     return (
@@ -727,12 +474,10 @@ const Comissoes = () => {
           <p className="text-slate-500">Gerencie suas comissões de vendas imobiliárias.</p>
         </div>
         <div className="flex gap-2">
-          {mesSelecionado !== null && (
-            <Button variant="outline" onClick={() => setMetaDialogOpen(true)}>
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Definir Meta
-            </Button>
-          )}
+          <Button variant="outline" onClick={() => modo === "anual" ? setMetaAnualDialogOpen(true) : setMetaDialogOpen(true)}>
+            <Target className="mr-2 h-4 w-4" />
+            {modo === "anual" ? "Definir Meta Anual" : "Definir Meta Mensal"}
+          </Button>
           <Button variant="outline" onClick={handleExportarRelatorio}>
             <Download className="mr-2 h-4 w-4" />
             Exportar
@@ -799,7 +544,11 @@ const Comissoes = () => {
             ))}
             {/* Botão para limpar filtro de mês */}
             <button
-              className={`px-3 py-1 rounded text-sm border bg-slate-50 text-slate-500 ml-2 ${mesSelecionado === null ? 'font-bold underline' : ''}`}
+              className={`px-3 py-1 rounded text-sm border ${
+                mesSelecionado === null 
+                  ? 'bg-blue-500 text-white font-medium' 
+                  : 'bg-slate-50 text-slate-700 hover:bg-blue-100'
+              }`}
               onClick={() => setMesSelecionado(null)}
             >
               Anual
@@ -841,7 +590,14 @@ const Comissoes = () => {
 
       {/* Exibe o resumo anual apenas se estiver na visão anual */}
       {mesSelecionado === null && (
-        <ResumoAnualComissoes ano={anoAtual} comissoes={comissoes} metasAno={metasAno} recebimentosPorMes={recebimentosPorMes} aReceberPorMes={aReceberPorMes} />
+        <RelatorioAnualComissoes 
+          ano={anoAtual} 
+          comissoes={comissoes} 
+          metasAno={metasDoAno} 
+          recebimentosPorMes={recebimentosPorMes} 
+          aReceberPorMes={aReceberPorMes}
+          usuario={{ nome: user?.user_metadata?.name || user?.email || "Usuário" }}
+        />
       )}
 
       {/* Cards de resumo */}
@@ -922,12 +678,16 @@ const Comissoes = () => {
                       />
                     )
                   ) : (
-                    <ComissaoTable 
-                      comissoes={comissoesExibidas}
-                      onMarcarPago={marcarComoPago}
-                      onEditar={handleEditarComissao}
-                      onExcluir={handleExcluirComissao}
-                    />
+                    comissoesExibidas.length === 0 ? (
+                      <div className="p-6 text-center text-slate-500">Nenhuma comissão encontrada</div>
+                    ) : (
+                      <ComissaoTable 
+                        comissoes={comissoesExibidas}
+                        onMarcarPago={marcarComoPago}
+                        onEditar={handleEditarComissao}
+                        onExcluir={handleExcluirComissao}
+                      />
+                    )
                   )}
                 </CardContent>
               </Card>
@@ -937,7 +697,10 @@ const Comissoes = () => {
               <Card>
                 <CardContent className="p-0">
                   <ComissaoTable 
-                    comissoes={comissoesExibidas}
+                    comissoes={comissoesExibidas.filter(c => {
+                      const status = c.status?.toLowerCase();
+                      return status === "pendente" || status === "parcial";
+                    })}
                     onMarcarPago={marcarComoPago}
                     onEditar={handleEditarComissao}
                     onExcluir={handleExcluirComissao}
@@ -950,7 +713,7 @@ const Comissoes = () => {
               <Card>
                 <CardContent className="p-0">
                   <ComissaoTable 
-                    comissoes={comissoesExibidas}
+                    comissoes={comissoesExibidas.filter(c => c.status?.toLowerCase() === "recebido")}
                     showActions={false}
                   />
                 </CardContent>
@@ -974,6 +737,14 @@ const Comissoes = () => {
         onAddComissao={handleAdicionarOuAtualizarComissao}
         isMetaForm={true}
         currentMeta={metaComissao}
+      />
+
+      <MetaAnualDialog 
+        open={metaAnualDialogOpen}
+        onOpenChange={setMetaAnualDialogOpen}
+        onSave={atualizarMetaAnual}
+        currentValue={metaAnual}
+        ano={anoAtual}
       />
 
       <ExportDialog 
