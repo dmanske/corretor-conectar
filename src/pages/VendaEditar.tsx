@@ -253,7 +253,7 @@ const VendaEditar = () => {
           </CardContent>
           
           <CardFooter className="flex justify-between border-t bg-slate-50 p-4">
-            <Button variant="outline" type="button" onClick={() => navigate(`/vendas/${id}`)}>
+            <Button variant="outline" type="button" onClick={() => navigate(`/app/vendas/${id}`)}>
               <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -18,7 +17,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-const LoginForm = () => {
+const LoginForm = ({ onSwitchToRegister }: { onSwitchToRegister?: () => void }) => {
   const { login, loginWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -60,10 +59,13 @@ const LoginForm = () => {
   };
 
   const switchToRegister = () => {
-    const registerTab = document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="register"]');
-    if (registerTab instanceof HTMLElement) {
-      registerTab.click();
-    }
+    // Busca o botão da aba de cadastro pelo texto
+    const tabs = document.querySelectorAll('[role="tab"]');
+    tabs.forEach(tab => {
+      if (tab.textContent?.toLowerCase().includes('cadastrar')) {
+        (tab as HTMLElement).click();
+      }
+    });
   };
 
   return (
@@ -141,7 +143,7 @@ const LoginForm = () => {
           
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700 transition-colors" 
+            className="w-full bg-blue-600 hover:bg-blue-700 transition-colors text-white" 
             disabled={isLoading}
           >
             {isLoading ? (
@@ -173,7 +175,7 @@ const LoginForm = () => {
         type="button"
         onClick={handleGoogleLogin}
         disabled={isGoogleLoading}
-        className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50"
+        className="w-full flex items-center justify-center gap-2 border-gray-300 bg-white text-gray-900 hover:bg-gray-100 font-medium"
       >
         {isGoogleLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -189,7 +191,8 @@ const LoginForm = () => {
           <button
             type="button"
             className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-            onClick={switchToRegister}
+            onClick={onSwitchToRegister}
+            tabIndex={0}
           >
             Cadastre-se
           </button>

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import VendaEditar from "./pages/VendaEditar";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -35,10 +35,11 @@ const App = () => (
         <AuthProvider>
           <VendasProvider>
             <Routes>
+              <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              
+              <Route path="/reset-password" element={<Auth />} />
               <Route 
-                path="/" 
+                path="/app" 
                 element={
                   <ProtectedRoute>
                     <Layout />

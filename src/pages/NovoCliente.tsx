@@ -109,12 +109,21 @@ const NovoCliente = () => {
           title: "Cliente cadastrado!",
           description: "O novo cliente foi cadastrado com sucesso."
         });
-        navigate("/clientes");
+        navigate("/app/clientes");
       } else {
         throw new Error("Falha ao cadastrar cliente");
       }
     } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
+      // Log detalhado para ajudar a depurar
+      if (error.response) {
+        console.error("Resposta do servidor:", error.response.data);
+        console.error("Status:", error.response.status);
+      } else if (error.request) {
+        console.error("Sem resposta recebida:", error.request);
+      } else {
+        console.error("Erro ao configurar requisição:", error.message);
+      }
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar",
@@ -128,7 +137,7 @@ const NovoCliente = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mr-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/app/clientes")} className="mr-4">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar
         </Button>
@@ -202,18 +211,6 @@ const NovoCliente = () => {
                     value={formData.dataNascimento}
                     onChange={handleChange}
                     required
-                  />
-                </div>
-                
-                {/* Add the numero field */}
-                <div className="space-y-2">
-                  <Label htmlFor="numero">Número</Label>
-                  <Input
-                    id="numero"
-                    name="numero"
-                    placeholder="Ex: 123"
-                    value={formData.numero}
-                    onChange={handleChange}
                   />
                 </div>
               </div>
@@ -293,7 +290,7 @@ const NovoCliente = () => {
           </CardContent>
           
           <CardFooter className="flex justify-between border-t bg-slate-50 p-4">
-            <Button variant="outline" type="button" onClick={() => navigate("/clientes")} disabled={isSubmitting}>
+            <Button variant="outline" type="button" onClick={() => navigate("/app/clientes")} disabled={isSubmitting}>
               <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>

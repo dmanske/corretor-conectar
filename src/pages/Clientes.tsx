@@ -35,6 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientCard } from "@/components/ClientCard";
+import { useComissoes } from "@/hooks/comissoes";
 
 const Clientes = () => {
   const [busca, setBusca] = useState("");
@@ -44,6 +45,7 @@ const Clientes = () => {
   const [visualizacao, setVisualizacao] = useState<'grid' | 'lista'>(viewParam === "lista" ? "lista" : "grid");
   const { clientes, isLoading, formatarTelefone, atualizarCliente, excluirCliente } = useClientes();
   const { vendas, excluirVenda, formatarMoeda, formatarData, atualizarVenda } = useVendasContext();
+  const { getComissoesByVendaId } = useComissoes();
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
   const [clienteParaExcluir, setClienteParaExcluir] = useState<Cliente | null>(null);
   const [vendaParaExcluir, setVendaParaExcluir] = useState<string | null>(null);
@@ -92,11 +94,11 @@ const Clientes = () => {
 
   // Função para salvar edição
   const salvarEdicao = async () => {
-    if (!clienteEditando) return;
+    if (!clienteEditando) return false;
     setSalvando(true);
-    await atualizarCliente(clienteEditando.id, formEdit);
+    const sucesso = await atualizarCliente(clienteEditando.id, formEdit);
     setSalvando(false);
-    setClienteEditando(null);
+    return sucesso;
   };
 
   const handleExcluirCliente = async () => {
@@ -126,6 +128,19 @@ const Clientes = () => {
 
   const handleExcluirVenda = async () => {
     if (!vendaParaExcluir) return;
+    
+    // Verificar se há comissões associadas a esta venda
+    const comissoesAssociadas = getComissoesByVendaId(vendaParaExcluir);
+    if (comissoesAssociadas && comissoesAssociadas.length > 0) {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível excluir a venda",
+        description: "Esta venda está atrelada a uma comissão. Exclua a comissão antes de remover a venda."
+      });
+      setVendaParaExcluir(null);
+      return;
+    }
+    
     try {
       const sucesso = await excluirVenda(vendaParaExcluir);
       if (sucesso) {
@@ -135,12 +150,23 @@ const Clientes = () => {
           variant: "success"
         });
       }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao excluir venda",
-        description: "Não foi possível excluir a venda."
-      });
+    } catch (error: any) {
+      // Verifica se o erro é relacionado à comissão
+      if (error?.response?.data?.mensagem?.toLowerCase().includes("comissão") || 
+          error?.message?.toLowerCase().includes("comissão") ||
+          error?.message?.toLowerCase().includes("comissao")) {
+        toast({
+          variant: "destructive",
+          title: "Não foi possível excluir a venda",
+          description: "Esta venda está atrelada a uma comissão. Exclua a comissão antes de remover a venda."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir venda",
+          description: "Não foi possível excluir a venda."
+        });
+      }
     } finally {
       setVendaParaExcluir(null);
     }
@@ -176,7 +202,7 @@ const Clientes = () => {
             <List className="h-5 w-5" />
           </Button>
           <Button asChild>
-            <Link to="/clientes/novo">
+            <Link to="/app/clientes/novo">
               <UserPlus className="mr-2 h-4 w-4" />
               Novo Cliente
             </Link>
@@ -241,7 +267,7 @@ const Clientes = () => {
                   type: venda.tipoImovel === 'Prédio' ? 'predio' : venda.tipoImovel === 'Comercial' ? 'comercial' : 'casa'
                 }))}
                 onWhatsAppClick={() => window.open(`https://wa.me/55${cliente.telefone.replace(/\D/g, '')}`)}
-                onViewDetails={() => navigate(`/clientes/${cliente.id}`)}
+                onViewDetails={() => navigate(`/app/clientes/${cliente.id}`)}
                 onEdit={() => abrirModalEditar(cliente)}
                 onDelete={() => setClienteParaExcluir(cliente)}
                 compact={true}
@@ -316,7 +342,7 @@ const Clientes = () => {
                   <div className="flex items-center gap-2 ml-4">
                     <WhatsAppButton telefone={cliente.telefone} size="sm" />
                     <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/clientes/${cliente.id}`} state={{ visualizacao }}><Eye className="h-4 w-4" /></Link>
+                      <Link to={`/app/clientes/${cliente.id}`} state={{ visualizacao }}><Eye className="h-4 w-4" /></Link>
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => abrirModalEditar(cliente)}>
                       <Edit className="h-4 w-4" />
@@ -335,9 +361,9 @@ const Clientes = () => {
           <CardContent className="py-10 text-center">
             <p className="text-slate-500 mb-4">Nenhum cliente encontrado.</p>
             <Button asChild>
-              <Link to="/clientes/novo">
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar Cliente
+              <Link to="/app/clientes/novo">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Novo Cliente
               </Link>
             </Button>
           </CardContent>
@@ -350,7 +376,7 @@ const Clientes = () => {
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>
-          <form onSubmit={e => { e.preventDefault(); salvarEdicao(); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={async e => { e.preventDefault(); const sucesso = await salvarEdicao(); if (sucesso) setClienteEditando(null); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome Completo</Label>
               <Input id="nome" value={formEdit.nome || ""} onChange={e => setFormEdit(f => ({ ...f, nome: e.target.value }))} required />
@@ -379,9 +405,9 @@ const Clientes = () => {
             </div>
             <DialogFooter className="col-span-1 md:col-span-2">
               <Button type="submit" disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</Button>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancelar</Button>
-              </DialogClose>
+              <Button type="button" variant="outline" onClick={() => setClienteEditando(null)}>
+                Cancelar
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

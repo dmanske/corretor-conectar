@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +30,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // Redirect to auth if not authenticated
   if (!isAuthenticated) {
     console.log("Não autenticado em ProtectedRoute, redirecionando para /auth");
+    // Salvar o caminho solicitado para uso após login
+    window.sessionStorage.setItem('requestedPath', location.pathname);
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 

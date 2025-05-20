@@ -1,6 +1,5 @@
-
 import { useState, useEffect, ChangeEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { ArrowLeft, Save, X, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +10,11 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useVendas } from "@/hooks/useVendas";
 import { useClientes } from "@/hooks/useClientes";
 import { formatarMoeda } from "@/lib/utils";
+import { Cliente } from "@/types";
 
 const NovaVenda = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { adicionarVenda } = useVendas();
   const { clientes } = useClientes();
@@ -29,19 +30,23 @@ const NovaVenda = () => {
     observacoes: ""
   });
   
-  const [clienteSelecionado, setClienteSelecionado] = useState(null);
+  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clienteFixo, setClienteFixo] = useState(false);
   
   useEffect(() => {
     // Preenche o clienteId da URL se existir
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const clienteId = params.get("cliente");
     if (clienteId) {
       setFormData(prev => ({ ...prev, clienteId }));
       const cliente = clientes.find(c => c.id === clienteId);
-      setClienteSelecionado(cliente);
+      if (cliente) {
+        setClienteSelecionado(cliente);
+        setClienteFixo(true); // Define o cliente como fixo quando vindo da URL
+      }
     }
-  }, [clientes]);
+  }, [clientes, location.search]);
   
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -86,7 +91,7 @@ const NovaVenda = () => {
           title: "Venda cadastrada!",
           description: "A nova venda foi cadastrada com sucesso."
         });
-        navigate("/vendas");
+        navigate("/app/vendas");
       } else {
         throw new Error("Falha ao cadastrar venda");
       }
@@ -102,10 +107,21 @@ const NovaVenda = () => {
     }
   };
 
+  const handleVoltar = () => {
+    // Se veio da página de cliente específico, volta para ela
+    if (clienteFixo && clienteSelecionado) {
+      navigate(`/app/clientes/${formData.clienteId}`);
+    } else if (location.state && location.state.fromVendas) {
+      navigate('/app/vendas');
+    } else {
+      navigate('/app/clientes');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mr-4">
+        <Button variant="ghost" size="sm" onClick={handleVoltar} className="mr-4">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Voltar
         </Button>
@@ -130,12 +146,18 @@ const NovaVenda = () => {
                     value={formData.clienteId}
                     onChange={handleChange}
                     required
+                    disabled={clienteFixo} // Desabilita o select quando o cliente é fixo
                   >
                     <option value="">Selecione um cliente</option>
                     {clientes.map(cliente => (
                       <option key={cliente.id} value={cliente.id}>{cliente.nome}</option>
                     ))}
                   </select>
+                  {clienteFixo && clienteSelecionado && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      Cliente fixo selecionado da página de detalhes.
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-2">
@@ -233,7 +255,7 @@ const NovaVenda = () => {
           </CardContent>
           
           <CardFooter className="flex justify-between border-t bg-slate-50 p-4">
-            <Button variant="outline" type="button" onClick={() => navigate("/vendas")} disabled={isSubmitting}>
+            <Button variant="outline" type="button" onClick={handleVoltar} disabled={isSubmitting}>
               <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>

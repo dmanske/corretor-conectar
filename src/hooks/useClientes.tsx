@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -81,39 +80,51 @@ export const useClientes = () => {
     if (!user) return null;
     
     try {
+      console.log("Iniciando cadastro de cliente:", cliente.nome);
+      console.log("Usuário autenticado:", user.id);
+      
+      // Logs para verificar os dados sendo enviados
+      const dadosParaEnviar = {
+        nome: cliente.nome,
+        endereco: cliente.endereco,
+        complemento: cliente.complemento,
+        telefone: cliente.telefone,
+        cidade: cliente.cidade,
+        estado: cliente.estado,
+        cpf: cliente.cpf,
+        data_nascimento: cliente.dataNascimento,
+        email: cliente.email,
+        observacoes: cliente.observacoes,
+        cep: cliente.cep,
+        user_id: user.id
+      };
+      
+      console.log("Dados a serem enviados para o Supabase:", dadosParaEnviar);
+      
       const { data, error } = await supabase
         .from("clientes")
-        .insert({
-          nome: cliente.nome,
-          endereco: cliente.endereco,
-          complemento: cliente.complemento,
-          numero: cliente.numero, // Include the numero property
-          telefone: cliente.telefone,
-          cidade: cliente.cidade,
-          estado: cliente.estado,
-          cpf: cliente.cpf,
-          data_nascimento: cliente.dataNascimento,
-          email: cliente.email,
-          observacoes: cliente.observacoes,
-          cep: cliente.cep,
-          user_id: user.id
-        })
+        .insert(dadosParaEnviar)
         .select();
 
       if (error) {
+        console.error("Erro retornado pelo Supabase:", error);
+        console.error("Código:", error.code);
+        console.error("Detalhes:", error.details);
+        console.error("Mensagem:", error.message);
         throw error;
       }
 
       if (data && data[0]) {
         // Use type assertion to handle potential missing fields
         const clienteData = data[0] as any;
+        console.log("Cliente cadastrado com sucesso. ID:", clienteData.id);
         
         const novoCliente: Cliente = {
           id: clienteData.id,
           nome: clienteData.nome,
           endereco: clienteData.endereco || "",
           complemento: clienteData.complemento || "",
-          numero: clienteData.numero || "", // Set default empty string
+          numero: "", // Definimos como string vazia já que não existe no banco
           telefone: clienteData.telefone || "",
           cidade: clienteData.cidade || "",
           estado: clienteData.estado || "",
@@ -130,13 +141,23 @@ export const useClientes = () => {
         setClientes([...clientes, novoCliente]);
         return novoCliente;
       }
+      
+      console.error("Nenhum dado retornado após inserção bem-sucedida");
       return null;
     } catch (error) {
       console.error("Erro ao adicionar cliente:", error);
+      // Log detalhado para depuração
+      if (error.response) {
+        console.error("Resposta do servidor:", error.response.data);
+        console.error("Status:", error.response.status);
+      }
+      if (error.code) {
+        console.error("Código do erro:", error.code);
+      }
       toast({
         variant: "destructive",
         title: "Erro ao adicionar cliente",
-        description: "Não foi possível adicionar o cliente."
+        description: error.message || "Não foi possível adicionar o cliente."
       });
       return null;
     }

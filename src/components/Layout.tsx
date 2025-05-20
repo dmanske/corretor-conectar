@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { 
@@ -63,7 +62,7 @@ const Layout = () => {
         
         {/* Footer */}
         <footer className="py-4 px-6 text-center text-sm text-slate-500 border-t border-slate-200">
-          © 2025 Sistema de Gestão Imobiliária. Todos os direitos reservados.
+          © 2025 ConectaPro - Simplificando a gestão de vendas. Todos os direitos reservados.
         </footer>
       </div>
     </div>

@@ -115,7 +115,7 @@ const Vendas = () => {
           <p className="text-slate-500">Gerencie todas as vendas realizadas.</p>
         </div>
         <Button asChild>
-          <Link to="/vendas/nova">
+          <Link to="/app/vendas/nova">
             <Building className="mr-2 h-4 w-4" />
             Nova Venda
           </Link>

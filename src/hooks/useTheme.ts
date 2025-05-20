@@ -3,17 +3,17 @@ import { useEffect, useState } from "react";
 type Theme = "light" | "dark";
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Verifica se existe um tema salvo no localStorage
-    const savedTheme = localStorage.getItem("theme") as Theme;
-    // Verifica a preferência do sistema
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    return savedTheme || systemTheme;
-  });
+  const [theme, setTheme] = useState<Theme>("light"); // Forçar o tema light
 
   useEffect(() => {
     // Atualiza o atributo data-theme no elemento html
     document.documentElement.setAttribute("data-theme", theme);
+    // Remove a classe 'dark' se estiver presente
+    if (theme === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
     // Salva o tema no localStorage
     localStorage.setItem("theme", theme);
   }, [theme]);

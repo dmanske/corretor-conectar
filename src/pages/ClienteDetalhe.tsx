@@ -77,7 +77,7 @@ const ClienteDetalhe = () => {
           description: "O cliente foi excluído com sucesso.",
           variant: "success"
         });
-        navigate("/clientes");
+        navigate("/app/clientes");
       }
     } catch (error) {
       console.error("Erro ao excluir cliente:", error);
@@ -156,9 +156,9 @@ const ClienteDetalhe = () => {
   
   const handleVoltar = () => {
     if (location.state && location.state.fromVendas) {
-      navigate('/vendas');
+      navigate('/app/vendas');
     } else {
-      navigate(`/clientes?view=${visualizacao}`);
+      navigate(`/app/clientes?view=${visualizacao}`);
     }
   };
   
@@ -185,7 +185,7 @@ const ClienteDetalhe = () => {
         <h2 className="text-2xl font-bold text-slate-700 mb-4">Cliente não encontrado</h2>
         <p className="text-slate-500 mb-8">O cliente que você está procurando não existe ou foi removido.</p>
         <Button asChild>
-          <Link to="/clientes">
+          <Link to="/app/clientes">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar para Lista de Clientes
           </Link>
@@ -200,9 +200,8 @@ const ClienteDetalhe = () => {
   };
   const handleViewDetails = () => {
     if (vendasCliente.length > 0) {
-      // Ordena por data e pega a venda mais recente
       const vendaMaisRecente = vendasCliente.reduce((a, b) => new Date(a.dataVenda) > new Date(b.dataVenda) ? a : b);
-      setVendaDetalhe(vendaMaisRecente);
+      navigate(`/app/vendas/${vendaMaisRecente.id}`);
     } else {
       toast({
         title: "Sem vendas",
@@ -213,7 +212,7 @@ const ClienteDetalhe = () => {
   };
   const handleEdit = () => setEditando(true);
   const handleDelete = () => setConfirmationOpen(true);
-  const handleNewSale = () => navigate(`/vendas/nova?cliente=${cliente.id}`);
+  const handleNewSale = () => navigate(`/app/vendas/nova?cliente=${cliente.id}`);
 
   const handleAprovarVenda = (vendaId: string) => {
     // Implemente a lógica para aprovar uma venda

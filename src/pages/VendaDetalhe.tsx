@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Edit, Trash, User } from "lucide-react";
@@ -86,7 +85,7 @@ const VendaDetalhe = () => {
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" asChild>
-            <Link to={`/vendas/${venda.id}/editar`}>
+            <Link to={`/app/vendas/${venda.id}/editar`}>
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </Link>
@@ -153,7 +152,7 @@ const VendaDetalhe = () => {
               <div>
                 <h3 className="text-lg font-semibold">{venda.clienteNome}</h3>
                 <Link 
-                  to={`/clientes/${venda.clienteId}`} 
+                  to={`/app/clientes/${venda.clienteId}`} 
                   className="text-sm text-blue-600 hover:underline"
                 >
                   Ver perfil completo do cliente
@@ -166,7 +165,7 @@ const VendaDetalhe = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-500 mb-4">Registre novas vendas para este cliente:</p>
               <Button asChild>
-                <Link to={`/vendas/nova?cliente=${venda.clienteId}`}>
+                <Link to={`/app/vendas/nova?cliente=${venda.clienteId}`}>
                   Nova Venda
                 </Link>
               </Button>

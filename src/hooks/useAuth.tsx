@@ -53,7 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Use setTimeout to avoid multiple redirections in the same tick
           setTimeout(() => {
             if (mounted) {
-              navigate("/", { replace: true });
+              const from = window.sessionStorage.getItem('requestedPath') || '/app';
+              navigate(from, { replace: true });
             }
           }, 0);
         } else if (event === 'SIGNED_OUT') {
@@ -62,8 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(null);
           setUser(null);
           setIsAuthenticated(false);
-          // Use replace to prevent back button from going back to protected routes
-          navigate("/auth", { replace: true });
+          // Não redirecionar automaticamente
         }
       }
     );
@@ -201,13 +201,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Mesmo com erro, continuamos com o processo
       }
       
-      // 4. Redirecionar para a página de auth
-      window.location.replace('/#/auth');
+      // 4. Redirecionar para a página inicial
+      window.location.replace('/');
       
     } catch (error) {
       console.error("Logout error:", error);
       // Mesmo com erro, forçar redirecionamento
-      window.location.replace('/#/auth');
+      window.location.replace('/');
     }
   };
 

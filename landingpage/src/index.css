@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .landing-page {
+    --background: 225 29% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 35% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 35% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 260 84% 73%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 263 84% 73%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  .landing-page * {
+    @apply border-border;
+  }
+
+  .landing-page {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .landing-page .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-dmanske-purple via-dmanske-blue to-dmanske-green;
+  }
+
+  .landing-page .glow {
+    text-shadow: 0 0 10px rgba(155, 135, 245, 0.5);
+  }
+
+  .landing-page .glow-border {
+    box-shadow: 0 0 10px rgba(155, 135, 245, 0.3);
+  }
+
+  .landing-page .glass {
+    @apply backdrop-blur-lg bg-white/5 border border-white/10;
+  }
+
+  .landing-page .neo-blur {
+    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
+  }
+
+  .landing-page .grid-bg {
+    background-size: 50px 50px;
+  }
+}

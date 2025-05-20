@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -21,7 +20,7 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-const RegisterForm = () => {
+const RegisterForm = ({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) => {
   const { register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,10 +56,13 @@ const RegisterForm = () => {
   };
   
   const switchToLogin = () => {
-    const loginTab = document.querySelector('[data-state="inactive"][data-orientation="horizontal"][data-value="login"]');
-    if (loginTab instanceof HTMLElement) {
-      loginTab.click();
-    }
+    // Busca o botão da aba de login pelo texto
+    const tabs = document.querySelectorAll('[role="tab"]');
+    tabs.forEach(tab => {
+      if (tab.textContent?.toLowerCase().includes('entrar')) {
+        (tab as HTMLElement).click();
+      }
+    });
   };
 
   return (
@@ -174,7 +176,7 @@ const RegisterForm = () => {
           
           <Button 
             type="submit" 
-            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 transition-colors" 
+            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 transition-colors text-white" 
             disabled={isLoading}
           >
             {isLoading ? (
@@ -195,7 +197,8 @@ const RegisterForm = () => {
           <button
             type="button"
             className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
-            onClick={switchToLogin}
+            onClick={onSwitchToLogin}
+            tabIndex={0}
           >
             Faça login
           </button>

@@ -22,27 +22,27 @@ const Sidebar = ({ collapsed }: SidebarProps) => {
     {
       title: "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" />,
-      path: "/"
+      path: "/app"
     },
     {
       title: "Clientes",
       icon: <Users className="h-5 w-5" />,
-      path: "/clientes"
+      path: "/app/clientes"
     },
     {
       title: "Vendas",
       icon: <Home className="h-5 w-5" />,
-      path: "/vendas"
+      path: "/app/vendas"
     },
     {
       title: "Comissões",
       icon: <CircleDollarSign className="h-5 w-5" />,
-      path: "/comissoes"
+      path: "/app/comissoes"
     },
     {
       title: "Aniversários",
       icon: <Calendar className="h-5 w-5" />,
-      path: "/aniversarios"
+      path: "/app/aniversarios"
     }
   ];
 

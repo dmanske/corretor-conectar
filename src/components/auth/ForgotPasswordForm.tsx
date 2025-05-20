@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -63,12 +62,11 @@ const ForgotPasswordForm = ({ onCancel }: ForgotPasswordFormProps) => {
               </FormItem>
             )}
           />
-          
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <Button 
               type="button" 
               variant="outline"
-              className="flex-1"
+              className="flex-1 text-gray-900"
               onClick={onCancel}
               disabled={isLoading}
             >
@@ -76,7 +74,7 @@ const ForgotPasswordForm = ({ onCancel }: ForgotPasswordFormProps) => {
             </Button>
             <Button 
               type="submit" 
-              className="flex-1"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
               disabled={isLoading}
             >
               {isLoading ? (
