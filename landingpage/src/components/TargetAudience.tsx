@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { User, Briefcase } from 'lucide-react';
+import { User, Users, Briefcase, Building } from 'lucide-react';
 
 const audiences = [
   {
