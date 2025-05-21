@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Download, PlusCircle, Cog, Loader2, BarChart3, CheckCircle, AlertTriangle, XCircle, TrendingUp, DollarSign, Clock, Target } from "lucide-react";
@@ -21,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import CommissionReport from "@/components/comissoes/CommissionReport";
 
 const meses = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
@@ -457,6 +457,23 @@ const Comissoes = () => {
     }
   }, [mesSelecionado]);
 
+  // Preparar dados para o relatório anual
+  const dadosRelatorioAnual = useMemo(() => {
+    const monthlyCommissions = meses.map((_, index) => {
+      const mes = index + 1;
+      const totalRecebido = getTotalRecebidoPorMesAno(mes, anoAtual);
+      return {
+        month: mes,
+        value: totalRecebido
+      };
+    });
+
+    return {
+      annualTarget: metaAnual || 0,
+      monthlyCommissions
+    };
+  }, [metaAnual, anoAtual, getTotalRecebidoPorMesAno]);
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
@@ -467,260 +484,294 @@ const Comissoes = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Comissões</h2>
-          <p className="text-slate-500">Gerencie suas comissões de vendas imobiliárias.</p>
-        </div>
+        <h1 className="text-2xl font-bold">Comissões</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => modo === "anual" ? setMetaAnualDialogOpen(true) : setMetaDialogOpen(true)}>
-            <Target className="mr-2 h-4 w-4" />
-            {modo === "anual" ? "Definir Meta Anual" : "Definir Meta Mensal"}
+          <Button onClick={() => setMetaAnualDialogOpen(true)}>
+            <Target className="w-4 h-4 mr-2" />
+            Meta Anual
           </Button>
-          <Button variant="outline" onClick={handleExportarRelatorio}>
-            <Download className="mr-2 h-4 w-4" />
-            Exportar
+          <Button onClick={() => setDialogOpen(true)}>
+            <PlusCircle className="w-4 h-4 mr-2" />
+            Nova Comissão
           </Button>
-          {mesSelecionado !== null && (
-            <Button onClick={() => {
-              setComissaoParaEditar(null);
-              setDialogOpen(true);
-            }}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nova Comissão
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      {/* Seletor de ano */}
-      <div className="flex flex-col sm:flex-row gap-4 items-end">
-        <div className="w-full sm:w-1/4">
-          <Label htmlFor="anoSelect" className="text-sm font-medium mb-2 block">Ano</Label>
-          <Select
-            value={String(anoAtual)}
-            onValueChange={value => alterarPeriodoAtual(mesAtual, parseInt(value))}
-          >
-            <SelectTrigger id="anoSelect" className="w-full">
-              <SelectValue placeholder="Selecione o ano" />
-            </SelectTrigger>
-            <SelectContent>
-              {anosDisponiveis.map(ano => (
-                <SelectItem key={ano} value={String(ano)}>
-                  {ano}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="w-full">
-          <div className="flex gap-1 mb-2 flex-wrap">
-            {meses.map((nome, idx) => (
-              <button
-                key={idx}
-                disabled={!mesesComComissao.has(idx)}
-                className={`px-3 py-1 rounded text-sm border ${
-                  idx === mesSelecionado 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-slate-100 text-slate-700'
-                } ${
-                  !mesesComComissao.has(idx) 
-                    ? 'opacity-40 cursor-not-allowed' 
-                    : 'hover:bg-blue-100'
-                } ${
-                  mesesComMeta.has(idx) 
-                    ? 'border-green-500 font-medium' 
-                    : ''
-                }`}
-                onClick={() => setMesSelecionado(idx !== mesSelecionado ? idx : null)}
-              >
-                {nome}
-                {mesesComMeta.has(idx) && (
-                  <span className="ml-1 text-green-500">•</span>
-                )}
-              </button>
-            ))}
-            {/* Botão para limpar filtro de mês */}
-            <button
-              className={`px-3 py-1 rounded text-sm border ${
-                mesSelecionado === null 
-                  ? 'bg-blue-500 text-white font-medium' 
-                  : 'bg-slate-50 text-slate-700 hover:bg-blue-100'
-              }`}
-              onClick={() => setMesSelecionado(null)}
-            >
-              Anual
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Meta atual */}
-      {mesSelecionado !== null && (
-        <Card className="border-2 border-slate-200">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h3 className="text-lg font-medium">Meta de venda de {obterNomeMes(mesAtual)} de {anoAtual}</h3>
-                <p className="text-slate-600">
-                  {metaComissao ? 
-                    `Meta definida: ${metaComissao.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}` : 
-                    'Nenhuma meta de venda definida para este mês'
-                  }
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-right">
-                  <div className="text-sm text-slate-500">Progresso</div>
-                  <div className="font-bold text-lg">{totaisRecebimentos.atingidoPercentual.toFixed(1)}%</div>
-                </div>
-                <div className="w-32 h-4 bg-slate-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full ${totaisRecebimentos.atingidoPercentual >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                    style={{ width: `${Math.min(totaisRecebimentos.atingidoPercentual, 100)}%` }}
-                  ></div>
-                </div>
+      <Tabs defaultValue="todas" value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="todas">Todas</TabsTrigger>
+          <TabsTrigger value="pendentes">Pendentes</TabsTrigger>
+          <TabsTrigger value="recebidas">Recebidas</TabsTrigger>
+          <TabsTrigger value="relatorio">Relatório Anual</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="todas">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Comissões</h2>
+              <p className="text-slate-500">Gerencie suas comissões de vendas imobiliárias.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => modo === "anual" ? setMetaAnualDialogOpen(true) : setMetaDialogOpen(true)}>
+                <Target className="mr-2 h-4 w-4" />
+                {modo === "anual" ? "Definir Meta Anual" : "Definir Meta Mensal"}
+              </Button>
+              <Button variant="outline" onClick={handleExportarRelatorio}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar
+              </Button>
+              {mesSelecionado !== null && (
+                <Button onClick={() => {
+                  setComissaoParaEditar(null);
+                  setDialogOpen(true);
+                }}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nova Comissão
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {/* Seletor de ano */}
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="w-full sm:w-1/4">
+              <Label htmlFor="anoSelect" className="text-sm font-medium mb-2 block">Ano</Label>
+              <Select
+                value={String(anoAtual)}
+                onValueChange={value => alterarPeriodoAtual(mesAtual, parseInt(value))}
+              >
+                <SelectTrigger id="anoSelect" className="w-full">
+                  <SelectValue placeholder="Selecione o ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {anosDisponiveis.map(ano => (
+                    <SelectItem key={ano} value={String(ano)}>
+                      {ano}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="w-full">
+              <div className="flex gap-1 mb-2 flex-wrap">
+                {meses.map((nome, idx) => (
+                  <button
+                    key={idx}
+                    disabled={!mesesComComissao.has(idx)}
+                    className={`px-3 py-1 rounded text-sm border ${
+                      idx === mesSelecionado 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-slate-100 text-slate-700'
+                    } ${
+                      !mesesComComissao.has(idx) 
+                        ? 'opacity-40 cursor-not-allowed' 
+                        : 'hover:bg-blue-100'
+                    } ${
+                      mesesComMeta.has(idx) 
+                        ? 'border-green-500 font-medium' 
+                        : ''
+                    }`}
+                    onClick={() => setMesSelecionado(idx !== mesSelecionado ? idx : null)}
+                  >
+                    {nome}
+                    {mesesComMeta.has(idx) && (
+                      <span className="ml-1 text-green-500">•</span>
+                    )}
+                  </button>
+                ))}
+                {/* Botão para limpar filtro de mês */}
+                <button
+                  className={`px-3 py-1 rounded text-sm border ${
+                    mesSelecionado === null 
+                      ? 'bg-blue-500 text-white font-medium' 
+                      : 'bg-slate-50 text-slate-700 hover:bg-blue-100'
+                  }`}
+                  onClick={() => setMesSelecionado(null)}
+                >
+                  Anual
+                </button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Exibe o resumo anual apenas se estiver na visão anual */}
-      {mesSelecionado === null && (
-        <RelatorioAnualComissoes 
-          ano={anoAtual} 
-          comissoes={comissoes} 
-          metasAno={metasDoAno} 
-          recebimentosPorMes={recebimentosPorMes} 
-          aReceberPorMes={aReceberPorMes}
-          usuario={{ nome: user?.user_metadata?.name || user?.email || "Usuário" }}
-        />
-      )}
-
-      {/* Cards de resumo */}
-      {mesSelecionado !== null && (
-        <ComissoesSummary
-          totalComissoes={comissoesExibidas.reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0)}
-          totalCount={comissoesExibidas.length}
-          totalRecebido={totaisRecebimentos.totalRecebido}
-          recebidoCount={comissoesExibidas.filter(c => c.status?.toLowerCase() === "recebido").length}
-          totalPendente={totaisRecebimentos.totalPendente}
-          pendenteCount={comissoesExibidas.filter(c => {
-            const status = c.status?.toLowerCase();
-            return status === "pendente" || status === "parcial";
-          }).length}
-          metaComissao={metaComissao}
-          atingidoPercentual={totaisRecebimentos.atingidoPercentual}
-          labelMeta="Meta de venda"
-          totalVendas={comissoesExibidas.reduce((acc, c) => acc + (c.valorVenda || 0), 0)}
-          totalVendasCount={comissoesExibidas.length}
-        />
-      )}
-
-      {/* Filtros e tabela */}
-      <Tabs defaultValue="todas" value={tab}>
-        <ComissoesFilter 
-          tab={tab}
-          onTabChange={setTab}
-          filtro={filtro}
-          onFiltroChange={setFiltro}
-          periodo={periodo}
-          onPeriodoChange={setPeriodo}
-          order={order}
-          onOrderChange={setOrder}
-          showPeriodo={mesSelecionado === null}
-          groupByDay={mesSelecionado === null ? groupByDay : undefined}
-          onGroupByDayChange={mesSelecionado === null ? setGroupByDay : undefined}
-          onHojeClick={() => setHojeAtivo(h => !h)}
-          dataInicial={dataInicial}
-          dataFinal={dataFinal}
-          onDataInicialChange={setDataInicial}
-          onDataFinalChange={setDataFinal}
-          minData={minData}
-          maxData={maxData}
-          onLimparFiltros={limparFiltros}
-        />
-
-        {isLoading ? (
-          <div className="flex justify-center items-center h-48">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           </div>
-        ) : comissoes.length === 0 ? (
-          <div className="text-center p-8 border rounded-md bg-slate-50">
-            <p className="text-slate-500 mb-2">Nenhuma comissão encontrada</p>
-            <Button onClick={() => {
-              setComissaoParaEditar(null);
-              setDialogOpen(true);
-            }}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Comissão
-            </Button>
-          </div>
-        ) :
-          <>
-            <TabsContent value="todas" className="space-y-4">
-              <Card>
-                <CardContent className="p-0">
-                  {/* Agrupamento por dia se mês selecionado */}
-                  {mesSelecionado !== null ? (
-                    comissoesExibidas.length === 0 ? (
-                      <div className="p-6 text-center text-slate-500">Nenhuma comissão neste mês</div>
-                    ) : (
-                      <ComissaoTable 
-                        comissoes={comissoesExibidas}
-                        onMarcarPago={marcarComoPago}
-                        onEditar={handleEditarComissao}
-                        onExcluir={handleExcluirComissao}
-                        showHeader={true}
-                      />
-                    )
-                  ) : (
-                    comissoesExibidas.length === 0 ? (
-                      <div className="p-6 text-center text-slate-500">Nenhuma comissão encontrada</div>
-                    ) : (
-                      <ComissaoTable 
-                        comissoes={comissoesExibidas}
-                        onMarcarPago={marcarComoPago}
-                        onEditar={handleEditarComissao}
-                        onExcluir={handleExcluirComissao}
-                      />
-                    )
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
 
-            <TabsContent value="pendentes" className="space-y-4">
-              <Card>
-                <CardContent className="p-0">
-                  <ComissaoTable 
-                    comissoes={comissoesExibidas.filter(c => {
-                      const status = c.status?.toLowerCase();
-                      return status === "pendente" || status === "parcial";
-                    })}
-                    onMarcarPago={marcarComoPago}
-                    onEditar={handleEditarComissao}
-                    onExcluir={handleExcluirComissao}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {/* Meta atual */}
+          {mesSelecionado !== null && (
+            <Card className="border-2 border-slate-200">
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="text-lg font-medium">Meta de venda de {obterNomeMes(mesAtual)} de {anoAtual}</h3>
+                    <p className="text-slate-600">
+                      {metaComissao ? 
+                        `Meta definida: ${metaComissao.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}` : 
+                        'Nenhuma meta de venda definida para este mês'
+                      }
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <div className="text-sm text-slate-500">Progresso</div>
+                      <div className="font-bold text-lg">{totaisRecebimentos.atingidoPercentual.toFixed(1)}%</div>
+                    </div>
+                    <div className="w-32 h-4 bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${totaisRecebimentos.atingidoPercentual >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min(totaisRecebimentos.atingidoPercentual, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <TabsContent value="recebidas" className="space-y-4">
-              <Card>
-                <CardContent className="p-0">
-                  <ComissaoTable 
-                    comissoes={comissoesExibidas.filter(c => c.status?.toLowerCase() === "recebido")}
-                    showActions={false}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </>
-        }
+          {/* Exibe o resumo anual apenas se estiver na visão anual */}
+          {mesSelecionado === null && (
+            <RelatorioAnualComissoes 
+              ano={anoAtual} 
+              comissoes={comissoes} 
+              metasAno={metasDoAno} 
+              recebimentosPorMes={recebimentosPorMes} 
+              aReceberPorMes={aReceberPorMes}
+              usuario={{ nome: user?.user_metadata?.name || user?.email || "Usuário" }}
+            />
+          )}
+
+          {/* Cards de resumo */}
+          {mesSelecionado !== null && (
+            <ComissoesSummary
+              totalComissoes={comissoesExibidas.reduce((acc, c) => acc + (c.valorComissaoCorretor || 0), 0)}
+              totalCount={comissoesExibidas.length}
+              totalRecebido={totaisRecebimentos.totalRecebido}
+              recebidoCount={comissoesExibidas.filter(c => c.status?.toLowerCase() === "recebido").length}
+              totalPendente={totaisRecebimentos.totalPendente}
+              pendenteCount={comissoesExibidas.filter(c => {
+                const status = c.status?.toLowerCase();
+                return status === "pendente" || status === "parcial";
+              }).length}
+              metaComissao={metaComissao}
+              atingidoPercentual={totaisRecebimentos.atingidoPercentual}
+              labelMeta="Meta de venda"
+              totalVendas={comissoesExibidas.reduce((acc, c) => acc + (c.valorVenda || 0), 0)}
+              totalVendasCount={comissoesExibidas.length}
+            />
+          )}
+
+          {/* Filtros e tabela */}
+          <ComissoesFilter 
+            tab={tab}
+            onTabChange={setTab}
+            filtro={filtro}
+            onFiltroChange={setFiltro}
+            periodo={periodo}
+            onPeriodoChange={setPeriodo}
+            order={order}
+            onOrderChange={setOrder}
+            showPeriodo={mesSelecionado === null}
+            groupByDay={mesSelecionado === null ? groupByDay : undefined}
+            onGroupByDayChange={mesSelecionado === null ? setGroupByDay : undefined}
+            onHojeClick={() => setHojeAtivo(h => !h)}
+            dataInicial={dataInicial}
+            dataFinal={dataFinal}
+            onDataInicialChange={setDataInicial}
+            onDataFinalChange={setDataFinal}
+            minData={minData}
+            maxData={maxData}
+            onLimparFiltros={limparFiltros}
+          />
+
+          {isLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            </div>
+          ) : comissoes.length === 0 ? (
+            <div className="text-center p-8 border rounded-md bg-slate-50">
+              <p className="text-slate-500 mb-2">Nenhuma comissão encontrada</p>
+              <Button onClick={() => {
+                setComissaoParaEditar(null);
+                setDialogOpen(true);
+              }}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Comissão
+              </Button>
+            </div>
+          ) :
+            <>
+              <TabsContent value="todas" className="space-y-4">
+                <Card>
+                  <CardContent className="p-0">
+                    {/* Agrupamento por dia se mês selecionado */}
+                    {mesSelecionado !== null ? (
+                      comissoesExibidas.length === 0 ? (
+                        <div className="p-6 text-center text-slate-500">Nenhuma comissão neste mês</div>
+                      ) : (
+                        <ComissaoTable 
+                          comissoes={comissoesExibidas}
+                          onMarcarPago={marcarComoPago}
+                          onEditar={handleEditarComissao}
+                          onExcluir={handleExcluirComissao}
+                          showHeader={true}
+                        />
+                      )
+                    ) : (
+                      comissoesExibidas.length === 0 ? (
+                        <div className="p-6 text-center text-slate-500">Nenhuma comissão encontrada</div>
+                      ) : (
+                        <ComissaoTable 
+                          comissoes={comissoesExibidas}
+                          onMarcarPago={marcarComoPago}
+                          onEditar={handleEditarComissao}
+                          onExcluir={handleExcluirComissao}
+                        />
+                      )
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="pendentes" className="space-y-4">
+                <Card>
+                  <CardContent className="p-0">
+                    <ComissaoTable 
+                      comissoes={comissoesExibidas.filter(c => {
+                        const status = c.status?.toLowerCase();
+                        return status === "pendente" || status === "parcial";
+                      })}
+                      onMarcarPago={marcarComoPago}
+                      onEditar={handleEditarComissao}
+                      onExcluir={handleExcluirComissao}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="recebidas" className="space-y-4">
+                <Card>
+                  <CardContent className="p-0">
+                    <ComissaoTable 
+                      comissoes={comissoesExibidas.filter(c => c.status?.toLowerCase() === "recebido")}
+                      showActions={false}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </>
+          }
+        </TabsContent>
+
+        <TabsContent value="relatorio">
+          <Card>
+            <CardContent className="pt-6">
+              <CommissionReport
+                annualTarget={dadosRelatorioAnual.annualTarget}
+                monthlyCommissions={dadosRelatorioAnual.monthlyCommissions}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Forms modais */}
