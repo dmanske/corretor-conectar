@@ -38,6 +38,7 @@ export const fetchComissoes = async (userId: string | undefined) => {
       justificativa: comissao.justificativa,
       createdAt: comissao.created_at,
       updatedAt: comissao.updated_at,
+      nota_fiscal: comissao.nota_fiscal || ""
     }));
   } catch (error) {
     console.error("Erro ao buscar comissões:", error);
@@ -192,6 +193,28 @@ export const marcarComoPago = async (
   if (!userId) return false;
 
   try {
+    // Buscar a comissão para pegar o valor total
+    const { data: comissaoData, error: comissaoError } = await supabase
+      .from("comissoes")
+      .select("valor_comissao_corretor")
+      .eq("id", id)
+      .single();
+    if (comissaoError || !comissaoData) {
+      throw comissaoError || new Error("Comissão não encontrada");
+    }
+    const valorTotal = comissaoData.valor_comissao_corretor || 0;
+
+    // Buscar recebimentos já registrados
+    const recebimentos = await getRecebimentosByComissaoId(id);
+    const valorRecebido = recebimentos.reduce((acc, r) => acc + (r.valor || 0), 0);
+    const valorRestante = valorTotal - valorRecebido;
+
+    // Se houver valor pendente, registrar recebimento automático
+    if (valorRestante > 0) {
+      await adicionarRecebimento(id, valorRestante, new Date().toISOString().slice(0, 10), toast);
+    }
+
+    // Atualizar status para Recebido
     const { error } = await supabase
       .from("comissoes")
       .update({
@@ -203,6 +226,12 @@ export const marcarComoPago = async (
     if (error) {
       throw error;
     }
+
+    toast({
+      title: "Comissão marcada como recebida",
+      description: valorRestante > 0 ? "O valor restante foi registrado automaticamente." : "Status atualizado.",
+      variant: "success"
+    });
 
     return true;
   } catch (error) {

@@ -88,6 +88,7 @@ export const ComissaoTable = ({
               <TableHead className="px-3 py-2 text-center">Imóvel</TableHead>
               <TableHead className="px-3 py-2 text-center">Venda</TableHead>
               <TableHead className="px-3 py-2 text-center">Comissão</TableHead>
+              <TableHead className="px-3 py-2 text-center">Nota Fiscal</TableHead>
               <TableHead className="px-3 py-2 text-center">Recebido</TableHead>
               <TableHead className="px-3 py-2 text-center">Pendente</TableHead>
               <TableHead className="px-3 py-2 text-center">Status</TableHead>
@@ -98,7 +99,7 @@ export const ComissaoTable = ({
         <TableBody>
           {comissoes.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={showActions ? 8 : 7} className="text-center py-8 text-slate-500 font-sans text-xs">
+              <TableCell colSpan={showActions ? 9 : 8} className="text-center py-8 text-slate-500 font-sans text-xs">
                 Nenhuma comissão encontrada
               </TableCell>
             </TableRow>
@@ -116,11 +117,18 @@ export const ComissaoTable = ({
                     </div>
                   </TableCell>
                   <TableCell className="px-3 py-2 align-middle text-center">
-                    <span className="inline-block bg-slate-100 text-slate-600 rounded px-2 py-1 text-[14.4px] font-medium">{comissao.imovel}</span>
+                    <span className="inline-block bg-slate-100 text-slate-600 rounded px-2 py-1 text-[14.4px] font-medium">
+                      {comissao.imovel ? comissao.imovel.replace(/^\s*[^-]+\s*-\s*/, "") : ""}
+                    </span>
                   </TableCell>
                   <TableCell className="px-3 py-2 text-blue-900 font-bold text-[14.4px] align-middle text-center">{comissao.valorVenda ? `R$ ${Number(comissao.valorVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                   <TableCell className="px-3 py-2 text-green-900 font-bold text-[14.4px] align-middle text-center">{comissao.valorComissaoCorretor ? `R$ ${Number(comissao.valorComissaoCorretor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
-                  <TableCell className="px-3 py-2 text-green-700 font-bold text-[14.4px] align-middle text-center">{valorRecebido > 0 ? `R$ ${valorRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
+                  <TableCell className="px-3 py-2 text-yellow-900 font-bold text-[14.4px] align-middle text-center">{comissao.nota_fiscal ? comissao.nota_fiscal : '-'}</TableCell>
+                  <TableCell className="px-3 py-2 text-green-700 font-bold text-[14.4px] align-middle text-center">
+                    {valorRecebido > 0 ? (
+                      `R$ ${valorRecebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                    ) : '-'}
+                  </TableCell>
                   <TableCell className={`px-3 py-2 font-bold text-[14.4px] align-middle text-center ${valorPendente > 0 ? 'text-red-700' : 'text-slate-400'}`}>{valorPendente > 0 ? `R$ ${valorPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}</TableCell>
                   <TableCell className="px-3 py-2 align-middle text-center">
                     <span className={`px-2 py-1 rounded-full text-[14.4px] font-bold ${

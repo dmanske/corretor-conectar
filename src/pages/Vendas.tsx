@@ -217,7 +217,7 @@ const Vendas = () => {
                         <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">{venda.tipoImovel}</span>
                       </td>
                       <td className="py-2 px-4 border-b text-center">
-                        <span className="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800">{venda.notaFiscal || '-'}</span>
+                        <span className="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800 font-bold">{venda.notaFiscal || '-'}</span>
                       </td>
                     </tr>
                   ))}

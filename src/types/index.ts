@@ -33,6 +33,7 @@ export interface Venda {
   comissao_corretor?: number; // Used in multiple components
   createdAt?: string;
   updatedAt?: string;
+  notaFiscal?: string; // Adicionado para permitir salvar o número da nota fiscal
 }
 
 export interface Aniversariante {

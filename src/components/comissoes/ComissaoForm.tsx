@@ -197,7 +197,7 @@ const ComissaoForm = ({
     }
   }, [comissaoParaEditar]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (isMetaForm) {
       onAddComissao({ 
         valorComissaoCorretor: metaValor, 
@@ -221,7 +221,19 @@ const ComissaoForm = ({
       return;
     }
 
-    onAddComissao({
+    // Lógica especial para status Recebido: registrar valor restante automaticamente
+    if (comissaoParaEditar && novaComissao.status === "Recebido") {
+      // Buscar recebimentos atuais
+      const lista = await getRecebimentosByComissaoId(comissaoParaEditar.id);
+      const totalRecebido = lista.reduce((acc, r) => acc + parseValor(r.valor), 0);
+      const totalComissao = parseValor(novaComissao.valorComissaoCorretor);
+      const valorRestante = totalComissao - totalRecebido;
+      if (valorRestante > 0) {
+        await adicionarRecebimento(comissaoParaEditar.id, valorRestante, new Date().toISOString().slice(0, 10));
+      }
+    }
+
+    await onAddComissao({
       ...novaComissao,
       valorVenda: parseValor(novaComissao.valorVenda),
       valorComissaoImobiliaria: parseValor(novaComissao.valorComissaoImobiliaria),

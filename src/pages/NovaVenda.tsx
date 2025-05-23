@@ -5,7 +5,31 @@ import { useVendas } from "@/hooks/useVendas";
 import { useClientes } from "@/hooks/useClientes";
 import { Cliente } from "@/types";
 
-const Input = ({ label, type = "text", placeholder, className = "", required = false, value, onChange, name, disabled, maxLength }) => (
+// Tipos para as props dos componentes Input e Textarea
+interface InputProps {
+  label?: string;
+  type?: string;
+  placeholder?: string;
+  className?: string;
+  required?: boolean;
+  value?: string | number;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  name?: string;
+  disabled?: boolean;
+  maxLength?: number;
+}
+
+interface TextareaProps {
+  label?: string;
+  placeholder?: string;
+  className?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  name?: string;
+  maxLength?: number;
+}
+
+const Input = ({ label, type = "text", placeholder, className = "", required = false, value, onChange, name, disabled, maxLength }: InputProps) => (
   <div className={`flex flex-col space-y-1 ${className}`}>
     <label className="text-sm font-medium text-gray-700">
       {label} {required && <span className="text-red-500">*</span>}
@@ -24,7 +48,7 @@ const Input = ({ label, type = "text", placeholder, className = "", required = f
   </div>
 );
 
-const Textarea = ({ label, placeholder, className = "", value, onChange, name, maxLength }) => (
+const Textarea = ({ label, placeholder, className = "", value, onChange, name, maxLength }: TextareaProps) => (
   <div className={`flex flex-col space-y-1 ${className}`}>
     <label className="text-sm font-medium text-gray-700">{label}</label>
     <textarea
@@ -53,9 +77,8 @@ export default function NovaVenda() {
     endereco: "",
     valor: "",
     dataVenda: new Date().toISOString().slice(0, 10),
-    comissaoImobiliaria: "",
-    comissaoCorretor: "",
-    observacoes: ""
+    observacoes: "",
+    notaFiscal: ""
   });
 
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
@@ -77,7 +100,7 @@ export default function NovaVenda() {
   }, [clientes, location.search]);
 
   // Máscara para valor monetário
-  function maskValor(value) {
+  function maskValor(value: string): string {
     let v = value.replace(/\D/g, "");
     v = (parseInt(v, 10) || 0).toString();
     if (v.length === 0) return "";
@@ -86,10 +109,10 @@ export default function NovaVenda() {
     return v.replace(/(\d+)(\d{2})$/, "$1,$2").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
   }
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     let newValue = value;
-    if (name === "valor" || name === "comissaoImobiliaria" || name === "comissaoCorretor") {
+    if (name === "valor") {
       newValue = maskValor(value);
     }
     setFormData(prev => ({
@@ -99,7 +122,7 @@ export default function NovaVenda() {
   };
 
   // Handler para tipo de imóvel (select ou input)
-  const handleTipoImovelChange = (value) => {
+  const handleTipoImovelChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
       tipoImovel: value,
@@ -107,7 +130,7 @@ export default function NovaVenda() {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.clienteId || !formData.tipoImovel || !formData.endereco || !formData.valor || !formData.dataVenda) {
       toast({
@@ -127,11 +150,12 @@ export default function NovaVenda() {
         enderecoImovel: formData.endereco,
         valor: parseFloat(formData.valor.replace(/\D/g, "")) / 100,
         dataVenda: formData.dataVenda,
-        comissao_imobiliaria: parseFloat(formData.comissaoImobiliaria.replace(/\D/g, "") || "0") / 100,
-        comissao_corretor: parseFloat(formData.comissaoCorretor.replace(/\D/g, "") || "0") / 100,
+        comissao_imobiliaria: 0,
+        comissao_corretor: 0,
         observacoes: formData.observacoes,
-        comissao: parseFloat(formData.comissaoImobiliaria.replace(/\D/g, "") || "0") / 100,
+        comissao: 0,
         corretor: "",
+        notaFiscal: formData.notaFiscal
       }, clienteSelecionado?.nome || "");
       if (resultado) {
         toast({
@@ -228,10 +252,10 @@ export default function NovaVenda() {
               )}
             </div>
 
-            {/* Endereço */}
+            {/* Nome do Imóvel */}
             <Input
-              label="Endereço"
-              placeholder="Ex: Rua das Flores, 123 - Apto 203"
+              label="Nome do Imóvel"
+              placeholder="Ex: Residencial Flores"
               required
               name="endereco"
               value={formData.endereco}
@@ -249,6 +273,15 @@ export default function NovaVenda() {
               onChange={handleChange}
             />
 
+            {/* Nota Fiscal */}
+            <Input
+              label="Nota Fiscal"
+              placeholder="Número da nota fiscal"
+              name="notaFiscal"
+              value={formData.notaFiscal}
+              onChange={handleChange}
+            />
+
             {/* Data da Venda */}
             <Input
               label="Data da Venda"
@@ -256,26 +289,6 @@ export default function NovaVenda() {
               required
               name="dataVenda"
               value={formData.dataVenda}
-              onChange={handleChange}
-            />
-
-            {/* Comissão Imobiliária */}
-            <Input
-              label="Comissão Imobiliária (R$)"
-              type="text"
-              placeholder="Ex: 7.500,00"
-              name="comissaoImobiliaria"
-              value={formData.comissaoImobiliaria}
-              onChange={handleChange}
-            />
-
-            {/* Comissão Corretor */}
-            <Input
-              label="Comissão Corretor (R$)"
-              type="text"
-              placeholder="Ex: 7.500,00"
-              name="comissaoCorretor"
-              value={formData.comissaoCorretor}
               onChange={handleChange}
             />
 
