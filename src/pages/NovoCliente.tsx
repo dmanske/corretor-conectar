@@ -141,12 +141,11 @@ export default function NovoCliente() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white">
+    <div className="max-w-4xl p-6 bg-white border-0">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Adicione um novo cliente ao sistema
         </h1>
-        <div className="h-1 w-20 bg-blue-500 rounded"></div>
       </div>
       <form onSubmit={handleSubmit}>
         <div className="space-y-6">

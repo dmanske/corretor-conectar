@@ -10,6 +10,7 @@ import { format, parseISO, isSameMonth, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useClientes } from "@/hooks/useClientes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { useComissoes } from "@/hooks/useComissoes";
 
 const Vendas = () => {
   const [busca, setBusca] = useState("");
@@ -22,6 +23,7 @@ const Vendas = () => {
   const [filtroDataFim, setFiltroDataFim] = useState<string>("");
   const { vendas, isLoading, formatarMoeda, formatarData } = useVendas();
   const { clientes } = useClientes();
+  const { comissoes, getComissoesByVendaId } = useComissoes();
   const [vendaDetalhe, setVendaDetalhe] = useState<Venda | null>(null);
   
   // Filtrar vendas com base na busca e filtros
@@ -217,7 +219,16 @@ const Vendas = () => {
                         <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">{venda.tipoImovel}</span>
                       </td>
                       <td className="py-2 px-4 border-b text-center">
-                        <span className="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800 font-bold">{venda.notaFiscal || '-'}</span>
+                        <span className="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800 font-bold">
+                          {(() => {
+                            const comissoesVenda = getComissoesByVendaId(venda.id);
+                            if (comissoesVenda && comissoesVenda.length > 0) {
+                              const nf = (comissoesVenda[0] as any).nota_fiscal;
+                              return nf || "-";
+                            }
+                            return "-";
+                          })()}
+                        </span>
                       </td>
                     </tr>
                   ))}

@@ -77,8 +77,7 @@ export default function NovaVenda() {
     endereco: "",
     valor: "",
     dataVenda: new Date().toISOString().slice(0, 10),
-    observacoes: "",
-    notaFiscal: ""
+    observacoes: ""
   });
 
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
@@ -154,8 +153,7 @@ export default function NovaVenda() {
         comissao_corretor: 0,
         observacoes: formData.observacoes,
         comissao: 0,
-        corretor: "",
-        notaFiscal: formData.notaFiscal
+        corretor: ""
       }, clienteSelecionado?.nome || "");
       if (resultado) {
         toast({
@@ -270,15 +268,6 @@ export default function NovaVenda() {
               required
               name="valor"
               value={formData.valor}
-              onChange={handleChange}
-            />
-
-            {/* Nota Fiscal */}
-            <Input
-              label="Nota Fiscal"
-              placeholder="Número da nota fiscal"
-              name="notaFiscal"
-              value={formData.notaFiscal}
               onChange={handleChange}
             />
 
