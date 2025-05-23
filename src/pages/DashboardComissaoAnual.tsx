@@ -188,53 +188,53 @@ const DashboardComissaoAnual = () => {
       <div className="flex flex-col gap-2 items-start">
         <Button onClick={() => setEditandoMeta(true)} variant="outline" className="mb-2 whitespace-nowrap">Definir Meta Anual</Button>
         <div className="grid gap-4 md:grid-cols-4 w-full">
-          <Card className="bg-gradient-to-br from-indigo-500 via-blue-400 to-cyan-400 text-white relative overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Meta Anual de Comissão</CardTitle>
-              <Target className="h-4 w-4 text-white/80" />
-            </CardHeader>
-            <CardContent>
+        <Card className="bg-gradient-to-br from-indigo-500 via-blue-400 to-cyan-400 text-white relative overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Meta Anual de Comissão</CardTitle>
+            <Target className="h-4 w-4 text-white/80" />
+          </CardHeader>
+          <CardContent>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{formatarMoeda(anual_metaValor)}</span>
               </div>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-gradient-to-br from-green-400 via-emerald-500 to-lime-400 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="bg-gradient-to-br from-green-400 via-emerald-500 to-lime-400 text-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Comissão Recebida</CardTitle>
-              <DollarSign className="h-4 w-4 text-white/80" />
-            </CardHeader>
-            <CardContent>
+            <DollarSign className="h-4 w-4 text-white/80" />
+          </CardHeader>
+          <CardContent>
               <div className="text-2xl font-bold">{formatarMoeda(totalComissaoRecebida)}</div>
               <p className="text-sm text-white/80 mt-1">{anual_metaValor > 0 ? ((totalComissaoRecebida / anual_metaValor) * 100).toFixed(1) : 0}% da meta</p>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-400 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Comissões Pendentes</CardTitle>
-              <Clock className="h-4 w-4 text-white/80" />
-            </CardHeader>
-            <CardContent>
+        <Card className="bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-400 text-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Comissões Pendentes</CardTitle>
+            <Clock className="h-4 w-4 text-white/80" />
+          </CardHeader>
+          <CardContent>
               <div className="text-2xl font-bold">
                 {formatarMoeda(totalComissaoPendente)}
               </div>
-              <p className="text-sm text-white/80 mt-1">A receber</p>
-            </CardContent>
-          </Card>
+            <p className="text-sm text-white/80 mt-1">A receber</p>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-gradient-to-br from-fuchsia-500 via-purple-500 to-indigo-500 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Progresso da Meta</CardTitle>
-              <BarChart3 className="h-4 w-4 text-white/80" />
-            </CardHeader>
-            <CardContent>
+        <Card className="bg-gradient-to-br from-fuchsia-500 via-purple-500 to-indigo-500 text-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Progresso da Meta</CardTitle>
+            <BarChart3 className="h-4 w-4 text-white/80" />
+          </CardHeader>
+          <CardContent>
               <Progress value={anual_metaValor > 0 ? (totalComissaoRecebida / anual_metaValor) * 100 : 0} className="h-2 bg-white/20" />
               <p className="text-sm text-white/80 mt-2">{anual_metaValor > 0 ? ((totalComissaoRecebida / anual_metaValor) * 100).toFixed(1) : 0}% atingido</p>
-            </CardContent>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
       </div>
 
       {/* Modal para definir meta anual */}
@@ -398,16 +398,16 @@ const DashboardComissaoAnual = () => {
                       <TableCell className={`text-center font-bold ${valorPendente > 0 ? 'text-red-700' : 'text-slate-400'}`}>{valorPendente > 0 ? formatarMoeda(valorPendente) : 'R$ 0,00'}</TableCell>
                       <TableCell className="text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
-                          comissao.status?.toLowerCase() === "recebido"
+                        comissao.status?.toLowerCase() === "recebido" 
                             ? "bg-green-100 text-green-800 border border-green-300"
-                            : comissao.status?.toLowerCase() === "parcial"
+                          : comissao.status?.toLowerCase() === "parcial"
                             ? "bg-blue-100 text-blue-800 border border-blue-300"
                             : "bg-yellow-100 text-yellow-800 border border-yellow-300"
-                        }`}>
-                          {comissao.status || "Pendente"}
-                        </span>
-                      </TableCell>
-                    </TableRow>
+                      }`}>
+                        {comissao.status || "Pendente"}
+                      </span>
+                    </TableCell>
+                  </TableRow>
                   );
                 })}
             </TableBody>
@@ -418,4 +418,4 @@ const DashboardComissaoAnual = () => {
   );
 };
 
-export default DashboardComissaoAnual;
+export default DashboardComissaoAnual; 

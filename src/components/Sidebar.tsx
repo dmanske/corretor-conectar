@@ -44,12 +44,18 @@ const Sidebar = ({ collapsed, toggleSidebar, sidebarCollapsed, user, handleLogou
     {
       title: "Comissões",
       icon: <CircleDollarSign className="h-5 w-5" />,
-      path: "/app/comissoes"
-    },
-    {
-      title: "Dashboard Anual",
-      icon: <BarChart3 className="h-5 w-5" />,
-      path: "/app/dashboard-comissao-anual"
+      subItems: [
+        {
+          title: "Comissão Mensal",
+          icon: <Calendar className="h-4 w-4" />,
+          path: "/app/comissoes"
+        },
+        {
+          title: "Comissão Anual",
+          icon: <BarChart3 className="h-4 w-4" />,
+          path: "/app/dashboard-comissao-anual"
+        }
+      ]
     },
     {
       title: "Aniversários",
@@ -105,23 +111,54 @@ const Sidebar = ({ collapsed, toggleSidebar, sidebarCollapsed, user, handleLogou
       <nav className="mt-6 px-2 flex-grow">
         <ul className="space-y-1">
           {navItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center rounded-lg px-3 py-2.5 font-medium transition-all duration-200",
-                    isActive 
-                      ? "bg-blue-50 text-blue-700" 
-                      : "text-slate-700 hover:bg-blue-50 hover:text-blue-600",
-                    collapsed ? "justify-center" : ""
-                  )
-                }
-                end={item.path === "/"}
-              >
-                <span className={cn(collapsed ? "mx-auto" : "mr-3")}>{item.icon}</span>
-                {!collapsed && <span>{item.title}</span>}
-              </NavLink>
+            <li key={item.title}>
+              {item.subItems ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-2.5 font-bold text-slate-700 uppercase text-xs tracking-wider">
+                    <span>{item.icon}</span>
+                    {!collapsed && <span>{item.title}</span>}
+                  </div>
+                  <ul className="ml-2">
+                    {item.subItems.map((sub) => (
+                      <li key={sub.path}>
+                        <NavLink
+                          to={sub.path}
+                          className={({ isActive }) =>
+                            cn(
+                              "flex items-center rounded-lg px-3 py-2 font-medium transition-all duration-200",
+                              isActive
+                                ? "bg-blue-50 text-blue-700"
+                                : "text-slate-700 hover:bg-blue-50 hover:text-blue-600",
+                              collapsed ? "justify-center" : ""
+                            )
+                          }
+                          end={sub.path === "/"}
+                        >
+                          <span className={cn(collapsed ? "mx-auto" : "mr-2")}>{sub.icon}</span>
+                          {!collapsed && <span>{sub.title}</span>}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center rounded-lg px-3 py-2.5 font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-600",
+                      collapsed ? "justify-center" : ""
+                    )
+                  }
+                  end={item.path === "/"}
+                >
+                  <span className={cn(collapsed ? "mx-auto" : "mr-3")}>{item.icon}</span>
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+              )}
             </li>
           ))}
         </ul>
