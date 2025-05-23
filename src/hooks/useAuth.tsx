@@ -43,28 +43,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(newSession?.user ?? null);
         setIsAuthenticated(!!newSession);
         
+        // Só redireciona em eventos específicos de autenticação
         if (event === 'SIGNED_IN' && newSession) {
-          console.log("Usuário autenticado, redirecionando...");
-          toast({
-            title: "Login bem-sucedido",
-            description: `Bem-vindo, ${newSession.user.user_metadata.name || newSession.user.email}!`
-          });
-          
-          // Use setTimeout to avoid multiple redirections in the same tick
-          setTimeout(() => {
-            if (mounted) {
-              const from = window.sessionStorage.getItem('requestedPath') || '/app';
-              navigate(from, { replace: true });
-            }
-          }, 0);
+          console.log("Usuário autenticado, evento SIGNED_IN disparado.");
         } else if (event === 'SIGNED_OUT') {
           console.log("Usuário deslogado");
           // Limpar o estado local
           setSession(null);
           setUser(null);
           setIsAuthenticated(false);
-          // Não redirecionar automaticamente
+          // Redirecionar para a página inicial apenas quando o usuário se desloga explicitamente
+          navigate('/', { replace: true });
         }
+        // Não redireciona em outros eventos como TOKEN_REFRESHED
+
+        // **Adicionado:** Define isLoading como false após processar o evento
+        setIsLoading(false);
       }
     );
 
