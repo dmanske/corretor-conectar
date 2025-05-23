@@ -8,7 +8,8 @@ import {
   CircleDollarSign,
   LogOut,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  BarChart3
 } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,11 @@ const Sidebar = ({ collapsed, toggleSidebar, sidebarCollapsed, user, handleLogou
       title: "Comissões",
       icon: <CircleDollarSign className="h-5 w-5" />,
       path: "/app/comissoes"
+    },
+    {
+      title: "Dashboard Anual",
+      icon: <BarChart3 className="h-5 w-5" />,
+      path: "/app/dashboard-comissao-anual"
     },
     {
       title: "Aniversários",

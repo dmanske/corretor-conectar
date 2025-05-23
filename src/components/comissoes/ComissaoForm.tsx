@@ -63,6 +63,7 @@ const ComissaoForm = ({
     if (comissaoParaEditar) {
       setNovaComissao({
         ...comissaoParaEditar,
+        nota_fiscal: comissaoParaEditar.nota_fiscal || ""
       });
       
       // Encontrar o ID do cliente baseado no nome
@@ -152,6 +153,50 @@ const ComissaoForm = ({
     return anos;
   };
 
+  // Função de máscara para moeda (R$)
+  function maskValor(value: string) {
+    let v = value.replace(/\D/g, "");
+    v = (parseInt(v, 10) || 0).toString();
+    if (v.length === 0) return "";
+    if (v.length === 1) return "0,0" + v;
+    if (v.length === 2) return "0," + v;
+    return v.replace(/(\d+)(\d{2})$/, "$1,$2").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+  }
+
+  // Função para converter valor formatado para número
+  function parseValor(valor: string | number) {
+    if (typeof valor === "number") return valor;
+    if (!valor) return 0;
+    return parseFloat(valor.replace(/\./g, "").replace(",", "."));
+  }
+
+  // Função para formatar valor inicial ao abrir o modal
+  function formatarValorInicial(valor: string | number) {
+    if (typeof valor === "number") {
+      return valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (typeof valor === "string" && valor.includes(",")) {
+      return valor;
+    }
+    const num = parseFloat(valor);
+    if (!isNaN(num)) {
+      return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return "";
+  }
+
+  // Ao abrir o modal de edição de comissão, garantir que os valores estejam formatados
+  useEffect(() => {
+    if (comissaoParaEditar) {
+      setNovaComissao((prev: any) => ({
+        ...prev,
+        valorVenda: formatarValorInicial(comissaoParaEditar.valorVenda),
+        valorComissaoImobiliaria: formatarValorInicial(comissaoParaEditar.valorComissaoImobiliaria),
+        valorComissaoCorretor: formatarValorInicial(comissaoParaEditar.valorComissaoCorretor)
+      }));
+    }
+  }, [comissaoParaEditar]);
+
   const handleSubmit = () => {
     if (isMetaForm) {
       onAddComissao({ 
@@ -167,8 +212,7 @@ const ComissaoForm = ({
       return;
     }
     
-    if (!novaComissao.cliente || !novaComissao.imovel || !novaComissao.valorVenda || 
-        !novaComissao.valorComissaoImobiliaria || !novaComissao.valorComissaoCorretor) {
+    if (!comissaoParaEditar && (!novaComissao.cliente || !novaComissao.imovel)) {
       toast({
         title: "Erro ao adicionar",
         description: "Preencha todos os campos obrigatórios.",
@@ -177,7 +221,12 @@ const ComissaoForm = ({
       return;
     }
 
-    onAddComissao(novaComissao);
+    onAddComissao({
+      ...novaComissao,
+      valorVenda: parseValor(novaComissao.valorVenda),
+      valorComissaoImobiliaria: parseValor(novaComissao.valorComissaoImobiliaria),
+      valorComissaoCorretor: parseValor(novaComissao.valorComissaoCorretor)
+    });
     onOpenChange(false);
     
     toast({
@@ -318,9 +367,9 @@ const ComissaoForm = ({
                 <Input
                   id="valorVenda"
                   name="valorVenda"
-                  type="number"
+                  type="text"
                   value={novaComissao.valorVenda || ""}
-                  onChange={handleInputChange}
+                  onChange={e => setNovaComissao({ ...novaComissao, valorVenda: maskValor(e.target.value) })}
                   placeholder="0,00"
                   disabled={!!comissaoParaEditar}
                 />
@@ -330,9 +379,9 @@ const ComissaoForm = ({
                 <Input
                   id="valorComissaoImobiliaria"
                   name="valorComissaoImobiliaria"
-                  type="number"
+                  type="text"
                   value={novaComissao.valorComissaoImobiliaria || ""}
-                  onChange={handleInputChange}
+                  onChange={e => setNovaComissao({ ...novaComissao, valorComissaoImobiliaria: maskValor(e.target.value) })}
                   placeholder="Ex: 7.500,00"
                 />
               </div>
@@ -341,9 +390,9 @@ const ComissaoForm = ({
                 <Input
                   id="valorComissaoCorretor"
                   name="valorComissaoCorretor"
-                  type="number"
+                  type="text"
                   value={novaComissao.valorComissaoCorretor || ""}
-                  onChange={handleInputChange}
+                  onChange={e => setNovaComissao({ ...novaComissao, valorComissaoCorretor: maskValor(e.target.value) })}
                   placeholder="Ex: 3.500,00"
                 />
               </div>
@@ -355,6 +404,17 @@ const ComissaoForm = ({
                   type="date"
                   value={novaComissao.dataContrato}
                   onChange={handleInputChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="nota_fiscal">Nota Fiscal</Label>
+                <Input
+                  id="nota_fiscal"
+                  name="nota_fiscal"
+                  type="text"
+                  value={novaComissao.nota_fiscal || ""}
+                  onChange={handleInputChange}
+                  placeholder="Número da nota fiscal"
                 />
               </div>
               {comissaoParaEditar && (
@@ -460,7 +520,7 @@ const ComissaoForm = ({
                     background: '#f9fafb',
                     minHeight: 40
                   }}>
-                    R$ {((novaComissao.valorComissaoCorretor || 0) - (recebimentos.reduce((acc, r) => acc + r.valor, 0) || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    R$ {(parseValor(novaComissao.valorComissaoCorretor) - recebimentos.reduce((acc, r) => acc + parseValor(r.valor), 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>

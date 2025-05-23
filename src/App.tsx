@@ -15,6 +15,7 @@ import NovoCliente from "./pages/NovoCliente";
 import NovaVenda from "./pages/NovaVenda";
 import Aniversarios from "./pages/Aniversarios";
 import Comissoes from "./pages/Comissoes";
+import DashboardComissaoAnual from "./pages/DashboardComissaoAnual";
 import HistoricoFinanceiro from "./pages/HistoricoFinanceiro";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="vendas/:id/editar" element={<ProtectedRoute><VendaEditar /></ProtectedRoute>} />
                 <Route path="aniversarios" element={<Aniversarios />} />
                 <Route path="comissoes" element={<Comissoes />} />
+                <Route path="dashboard-comissao-anual" element={<DashboardComissaoAnual />} />
                 <Route path="financeiro" element={<HistoricoFinanceiro />} />
                 <Route path="relatorios" element={<Relatorios />} />
                 <Route path="configuracoes" element={<Configuracoes />} />

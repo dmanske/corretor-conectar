@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Download, PlusCircle, Cog, Loader2, BarChart3, CheckCircle, AlertTriangle, XCircle, TrendingUp, DollarSign, Clock, Target, Star } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, ReferenceLine, CartesianGrid, Cell, LineChart, Line } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 // Custom hooks and components
 import { useComissoes } from "@/hooks/useComissoes";
@@ -678,7 +679,8 @@ const Comissoes = () => {
         valorAtualVenda: comissao.valorAtualVenda,
         diferencaValor: comissao.diferencaValor,
         statusValor: comissao.statusValor || "Atualizado",
-        justificativa: comissao.justificativa
+        justificativa: comissao.justificativa,
+        nota_fiscal: comissao.nota_fiscal || ""
       };
       adicionarComissao(novaComissao);
     }
@@ -710,6 +712,9 @@ const Comissoes = () => {
     setHojeAtivo(false);
   }
 
+  const [excluirMetaDialogOpen, setExcluirMetaDialogOpen] = useState(false);
+  const [mesParaExcluir, setMesParaExcluir] = useState<number | null>(null);
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
@@ -728,10 +733,18 @@ const Comissoes = () => {
         </div>
         <div className="flex gap-2">
           {mesSelecionado !== null && (
-            <Button variant="outline" onClick={() => setMetaDialogOpen(true)}>
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Definir Meta
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setMetaDialogOpen(true)}>
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Definir Meta
+              </Button>
+              {mesesComMeta.size > 0 && (
+                <Button variant="destructive" onClick={() => setExcluirMetaDialogOpen(true)}>
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Excluir Meta
+                </Button>
+              )}
+            </>
           )}
           <Button variant="outline" onClick={handleExportarRelatorio}>
             <Download className="mr-2 h-4 w-4" />
@@ -981,6 +994,62 @@ const Comissoes = () => {
         onOpenChange={setExportDialogOpen}
         comissoesParaExportar={comissoesParaDialogoExportacao}
       />
+
+      <Dialog open={excluirMetaDialogOpen} onOpenChange={setExcluirMetaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Meta de um Mês</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label htmlFor="mesExcluir">Selecione o mês para excluir a meta:</Label>
+            <Select
+              id="mesExcluir"
+              value={mesParaExcluir !== null ? String(mesParaExcluir) : ""}
+              onValueChange={value => setMesParaExcluir(Number(value))}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Escolha o mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {[...mesesComMeta].map(idx => (
+                  <SelectItem key={idx} value={String(idx)}>{mesesNomesCompletos[idx]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExcluirMetaDialogOpen(false)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              disabled={mesParaExcluir === null}
+              onClick={async () => {
+                if (mesParaExcluir === null) return;
+                await supabase
+                  .from('metas')
+                  .delete()
+                  .eq('mes', mesParaExcluir + 1)
+                  .eq('ano', anoAtual)
+                  .eq('user_id', user.id);
+                setExcluirMetaDialogOpen(false);
+                setMesParaExcluir(null);
+                // Atualizar metas do ano
+                if (typeof buscarMetasAno === 'function') buscarMetasAno();
+                toast({
+                  title: 'Meta excluída',
+                  description: `A meta de ${mesesNomesCompletos[mesParaExcluir]} foi removida com sucesso.`,
+                  variant: 'success'
+                });
+                // Se não houver mais meses com meta, desabilitar o seletor de mês
+                if (mesesComMeta.size <= 1) {
+                  setMesSelecionado(null);
+                }
+              }}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

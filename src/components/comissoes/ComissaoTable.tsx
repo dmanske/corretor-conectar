@@ -198,6 +198,11 @@ export const ComissaoTable = ({
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C7.03 2 3 6.03 3 11c0 5.25 7.11 10.39 8.09 11.09.34.25.82.25 1.16 0C13.89 21.39 21 16.25 21 11c0-4.97-4.03-9-9-9Zm0 17.88C9.14 17.1 5 13.61 5 11c0-3.87 3.13-7 7-7s7 3.13 7 7c0 2.61-4.14 6.1-7 8.88Z"/><path fill="currentColor" d="M12 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2Z"/></svg>
                     {detalhesComissao.imovel || 'Imóvel não informado'}
                   </div>
+                  {detalhesComissao.nota_fiscal && (
+                    <div className="mt-2 text-sm text-slate-700 font-semibold bg-yellow-50 border border-yellow-200 rounded px-3 py-1 inline-block">
+                      <span className="font-bold">Nota Fiscal:</span> {detalhesComissao.nota_fiscal}
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Sobre */}

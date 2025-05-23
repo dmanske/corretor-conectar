@@ -1,39 +1,67 @@
-import { useState, useEffect, ChangeEvent } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import { ArrowLeft, Save, X, Building } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useVendas } from "@/hooks/useVendas";
 import { useClientes } from "@/hooks/useClientes";
-import { formatarMoeda } from "@/lib/utils";
 import { Cliente } from "@/types";
 
-const NovaVenda = () => {
+const Input = ({ label, type = "text", placeholder, className = "", required = false, value, onChange, name, disabled, maxLength }) => (
+  <div className={`flex flex-col space-y-1 ${className}`}>
+    <label className="text-sm font-medium text-gray-700">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      type={type}
+      placeholder={placeholder}
+      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      required={required}
+      value={value}
+      onChange={onChange}
+      name={name}
+      disabled={disabled}
+      maxLength={maxLength}
+    />
+  </div>
+);
+
+const Textarea = ({ label, placeholder, className = "", value, onChange, name, maxLength }) => (
+  <div className={`flex flex-col space-y-1 ${className}`}>
+    <label className="text-sm font-medium text-gray-700">{label}</label>
+    <textarea
+      placeholder={placeholder}
+      rows={4}
+      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+      value={value}
+      onChange={onChange}
+      name={name}
+      maxLength={maxLength}
+    />
+  </div>
+);
+
+export default function NovaVenda() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { adicionarVenda } = useVendas();
   const { clientes } = useClientes();
-  
+
   const [formData, setFormData] = useState({
     clienteId: "",
     tipoImovel: "Apartamento",
+    outroTipo: "",
     endereco: "",
-    valor: "0,00",
+    valor: "",
     dataVenda: new Date().toISOString().slice(0, 10),
-    comissaoImobiliaria: "0",
-    comissaoCorretor: "0",
+    comissaoImobiliaria: "",
+    comissaoCorretor: "",
     observacoes: ""
   });
-  
+
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [clienteFixo, setClienteFixo] = useState(false);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     // Preenche o clienteId da URL se existir
     const params = new URLSearchParams(location.search);
@@ -43,22 +71,44 @@ const NovaVenda = () => {
       const cliente = clientes.find(c => c.id === clienteId);
       if (cliente) {
         setClienteSelecionado(cliente);
-        setClienteFixo(true); // Define o cliente como fixo quando vindo da URL
+        setClienteFixo(true);
       }
     }
   }, [clientes, location.search]);
-  
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+
+  // Máscara para valor monetário
+  function maskValor(value) {
+    let v = value.replace(/\D/g, "");
+    v = (parseInt(v, 10) || 0).toString();
+    if (v.length === 0) return "";
+    if (v.length === 1) return "0,0" + v;
+    if (v.length === 2) return "0," + v;
+    return v.replace(/(\d+)(\d{2})$/, "$1,$2").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+  }
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
+    let newValue = value;
+    if (name === "valor" || name === "comissaoImobiliaria" || name === "comissaoCorretor") {
+      newValue = maskValor(value);
+    }
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: newValue
     }));
   };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  // Handler para tipo de imóvel (select ou input)
+  const handleTipoImovelChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      tipoImovel: value,
+      outroTipo: value === "Outros" ? prev.outroTipo : ""
+    }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.clienteId || !formData.tipoImovel || !formData.endereco || !formData.valor || !formData.dataVenda) {
       toast({
         variant: "destructive",
@@ -67,25 +117,22 @@ const NovaVenda = () => {
       });
       return;
     }
-    
+    setIsSubmitting(true);
     try {
-      setIsSubmitting(true);
-      
-      // Adjust the venda object to match the updated interface
+      const tipoImovelFinal = formData.tipoImovel === "Outros" ? formData.outroTipo : formData.tipoImovel;
       const resultado = await adicionarVenda({
         clienteId: formData.clienteId,
-        tipoImovel: formData.tipoImovel,
+        tipoImovel: tipoImovelFinal,
         endereco: formData.endereco,
-        enderecoImovel: formData.endereco, // Add enderecoImovel for backwards compatibility
+        enderecoImovel: formData.endereco,
         valor: parseFloat(formData.valor.replace(/\D/g, "")) / 100,
         dataVenda: formData.dataVenda,
-        comissao_imobiliaria: parseFloat(formData.comissaoImobiliaria || "0"),
-        comissao_corretor: parseFloat(formData.comissaoCorretor || "0"),
+        comissao_imobiliaria: parseFloat(formData.comissaoImobiliaria.replace(/\D/g, "") || "0") / 100,
+        comissao_corretor: parseFloat(formData.comissaoCorretor.replace(/\D/g, "") || "0") / 100,
         observacoes: formData.observacoes,
-        comissao: parseFloat(formData.comissaoImobiliaria || "0"), // For backwards compatibility
-        corretor: "", // Add default value for compatibility
+        comissao: parseFloat(formData.comissaoImobiliaria.replace(/\D/g, "") || "0") / 100,
+        corretor: "",
       }, clienteSelecionado?.nome || "");
-      
       if (resultado) {
         toast({
           title: "Venda cadastrada!",
@@ -96,7 +143,6 @@ const NovaVenda = () => {
         throw new Error("Falha ao cadastrar venda");
       }
     } catch (error) {
-      console.error("Erro ao cadastrar venda:", error);
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar",
@@ -108,7 +154,6 @@ const NovaVenda = () => {
   };
 
   const handleVoltar = () => {
-    // Se veio da página de cliente específico, volta para ela
     if (clienteFixo && clienteSelecionado) {
       navigate(`/app/clientes/${formData.clienteId}`);
     } else if (location.state && location.state.fromVendas) {
@@ -119,167 +164,151 @@ const NovaVenda = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center">
-        <Button variant="ghost" size="sm" onClick={handleVoltar} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Voltar
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Nova Venda</h2>
-          <p className="text-slate-500">Adicione uma nova venda ao sistema.</p>
-        </div>
+    <div className="max-w-4xl mx-auto p-6 bg-white">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Adicione uma nova venda ao sistema
+        </h1>
+        <div className="h-1 w-20 bg-blue-500 rounded"></div>
       </div>
-      
-      <Card>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="pt-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Dados básicos */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="clienteId">Cliente <span className="text-red-500">*</span></Label>
-                  <select
-                    id="clienteId"
-                    name="clienteId"
-                    className="w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={formData.clienteId}
-                    onChange={handleChange}
-                    required
-                    disabled={clienteFixo} // Desabilita o select quando o cliente é fixo
-                  >
-                    <option value="">Selecione um cliente</option>
-                    {clientes.map(cliente => (
-                      <option key={cliente.id} value={cliente.id}>{cliente.nome}</option>
-                    ))}
-                  </select>
-                  {clienteFixo && clienteSelecionado && (
-                    <p className="text-xs text-blue-600 mt-1">
-                      Cliente fixo selecionado da página de detalhes.
-                    </p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="tipoImovel">Tipo de Imóvel <span className="text-red-500">*</span></Label>
-                  <select
-                    id="tipoImovel"
-                    name="tipoImovel"
-                    className="w-full rounded-md border border-slate-200 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={formData.tipoImovel}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="Apartamento">Apartamento</option>
-                    <option value="Casa">Casa</option>
-                    <option value="Terreno">Terreno</option>
-                    <option value="Sala Comercial">Sala Comercial</option>
-                    <option value="Galpão">Galpão</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="endereco">Endereço <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="endereco"
-                    name="endereco"
-                    placeholder="Ex: Rua das Flores, 123"
-                    value={formData.endereco}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="valor">Valor da Venda (R$) <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="valor"
-                    name="valor"
-                    placeholder="Ex: 1.200,00"
-                    value={formData.valor}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="dataVenda">Data da Venda <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="dataVenda"
-                    name="dataVenda"
-                    type="date"
-                    value={formData.dataVenda}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              {/* Comissões e Observações */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="comissaoImobiliaria">Comissão Imobiliária (R$)</Label>
-                  <Input
-                    id="comissaoImobiliaria"
-                    name="comissaoImobiliaria"
-                    placeholder="Ex: 15.000,00"
-                    value={formData.comissaoImobiliaria}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="comissaoCorretor">Comissão Corretor (R$)</Label>
-                  <Input
-                    id="comissaoCorretor"
-                    name="comissaoCorretor"
-                    placeholder="Ex: 7.500,00"
-                    value={formData.comissaoCorretor}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    name="observacoes"
-                    placeholder="Adicione observações relevantes sobre a venda"
-                    rows={5}
-                    value={formData.observacoes}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="flex justify-between border-t bg-slate-50 p-4">
-            <Button variant="outline" type="button" onClick={handleVoltar} disabled={isSubmitting}>
-              <X className="mr-2 h-4 w-4" />
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Cliente fixo ou select */}
+            <div className="col-span-2">
+              <label className="text-sm font-medium text-gray-700">Cliente *</label>
+              {clienteFixo && clienteSelecionado ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Salvando...
+                  <Input value={clienteSelecionado.nome} disabled />
+                  <p className="text-xs text-blue-600 mt-1">Cliente fixo selecionado da página de detalhes.</p>
                 </>
               ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar Venda
-                </>
+                <select
+                  name="clienteId"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+                  value={formData.clienteId}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clientes.map(cliente => (
+                    <option key={cliente.id} value={cliente.id}>{cliente.nome}</option>
+                  ))}
+                </select>
               )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            </div>
+
+            {/* Tipo de Imóvel com campo de texto se "Outros" */}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Tipo de Imóvel *</label>
+              <select
+                name="tipoImovel"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+                value={formData.tipoImovel}
+                onChange={e => handleTipoImovelChange(e.target.value)}
+                required
+              >
+                <option value="Apartamento">Apartamento</option>
+                <option value="Casa">Casa</option>
+                <option value="Terreno">Terreno</option>
+                <option value="Sala Comercial">Sala Comercial</option>
+                <option value="Galpão">Galpão</option>
+                <option value="Outros">Outros...</option>
+              </select>
+              {formData.tipoImovel === "Outros" && (
+                <Input
+                  className="mt-2"
+                  maxLength={30}
+                  placeholder="Descreva o tipo de imóvel"
+                  name="outroTipo"
+                  value={formData.outroTipo}
+                  onChange={handleChange}
+                  required
+                />
+              )}
+            </div>
+
+            {/* Endereço */}
+            <Input
+              label="Endereço"
+              placeholder="Ex: Rua das Flores, 123 - Apto 203"
+              required
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleChange}
+            />
+
+            {/* Valor da Venda */}
+            <Input
+              label="Valor da Venda (R$)"
+              type="text"
+              placeholder="Ex: 125.000,00"
+              required
+              name="valor"
+              value={formData.valor}
+              onChange={handleChange}
+            />
+
+            {/* Data da Venda */}
+            <Input
+              label="Data da Venda"
+              type="date"
+              required
+              name="dataVenda"
+              value={formData.dataVenda}
+              onChange={handleChange}
+            />
+
+            {/* Comissão Imobiliária */}
+            <Input
+              label="Comissão Imobiliária (R$)"
+              type="text"
+              placeholder="Ex: 7.500,00"
+              name="comissaoImobiliaria"
+              value={formData.comissaoImobiliaria}
+              onChange={handleChange}
+            />
+
+            {/* Comissão Corretor */}
+            <Input
+              label="Comissão Corretor (R$)"
+              type="text"
+              placeholder="Ex: 7.500,00"
+              name="comissaoCorretor"
+              value={formData.comissaoCorretor}
+              onChange={handleChange}
+            />
+
+            {/* Observações */}
+            <Textarea
+              label="Observações"
+              placeholder="Adicione observações relevantes sobre a venda"
+              className="col-span-2"
+              name="observacoes"
+              value={formData.observacoes}
+              onChange={handleChange}
+              maxLength={500}
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              onClick={handleVoltar}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : 'Salvar Venda'}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
-};
-
-export default NovaVenda;
+}

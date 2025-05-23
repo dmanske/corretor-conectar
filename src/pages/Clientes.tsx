@@ -177,6 +177,33 @@ const Clientes = () => {
     return vendas.filter(venda => venda.clienteId === clienteId);
   };
 
+  // Funções de máscara para CPF, telefone e CEP
+  function maskTelefone(value: string) {
+    return value
+      .replace(/\D/g, "")
+      .replace(/^(.{0,2})(.{0,1})(.{0,4})(.{0,4}).*/, (m, p1, p2, p3, p4) => {
+        let out = "";
+        if (p1) out += `(${p1}`;
+        if (p1 && p1.length === 2) out += ") ";
+        if (p2) out += p2;
+        if (p3) out += ` ${p3}`;
+        if (p4) out += `-${p4}`;
+        return out;
+      })
+      .slice(0, 16);
+  }
+  function maskCPF(value: string) {
+    return value
+      .replace(/\D/g, "")
+      .slice(0, 11)
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  function maskCEP(value: string) {
+    return value.replace(/\D/g, "").replace(/(\d{5})(\d{1,3})/, "$1-$2").slice(0, 9);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -374,41 +401,145 @@ const Clientes = () => {
       <Dialog open={!!clienteEditando} onOpenChange={open => { if (!open) setClienteEditando(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogTitle>Edite os dados do cliente</DialogTitle>
+            <p className="text-slate-500 text-sm mt-1">Atualize as informações do cliente abaixo. Campos marcados com <span className='text-red-500'>*</span> são obrigatórios.</p>
           </DialogHeader>
-          <form onSubmit={async e => { e.preventDefault(); const sucesso = await salvarEdicao(); if (sucesso) setClienteEditando(null); }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome Completo</Label>
-              <Input id="nome" value={formEdit.nome || ""} onChange={e => setFormEdit(f => ({ ...f, nome: e.target.value }))} required />
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" value={formEdit.email || ""} onChange={e => setFormEdit(f => ({ ...f, email: e.target.value }))} required />
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input id="telefone" value={formEdit.telefone || ""} onChange={e => setFormEdit(f => ({ ...f, telefone: e.target.value }))} required />
-              <Label htmlFor="cpf">CPF</Label>
-              <Input id="cpf" value={formEdit.cpf || ""} onChange={e => setFormEdit(f => ({ ...f, cpf: e.target.value }))} required />
-              <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-              <Input id="dataNascimento" type="date" value={formEdit.dataNascimento || ""} onChange={e => setFormEdit(f => ({ ...f, dataNascimento: e.target.value }))} required />
+          <form onSubmit={async e => { e.preventDefault(); const sucesso = await salvarEdicao(); if (sucesso) setClienteEditando(null); }}>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col space-y-1 col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Nome Completo <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Ex: João Silva"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    value={formEdit.nome || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, nome: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">E-mail <span className="text-red-500">*</span></label>
+                  <input
+                    type="email"
+                    placeholder="Ex: joao@email.com"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    value={formEdit.email || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, email: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Telefone <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Ex: (11) 9 9999-9999"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    value={formEdit.telefone || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, telefone: maskTelefone(e.target.value) }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">CPF <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 123.456.789-00"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    value={formEdit.cpf || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, cpf: maskCPF(e.target.value) }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Data de Nascimento <span className="text-red-500">*</span></label>
+                  <input
+                    type="date"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    value={formEdit.dataNascimento || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, dataNascimento: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1 col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Endereço</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Rua das Flores, 123"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formEdit.endereco || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, endereco: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Complemento</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Apto 101"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formEdit.complemento || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, complemento: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">CEP</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: 12345-678"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formEdit.cep || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, cep: maskCEP(e.target.value) }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Cidade</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: São Paulo"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formEdit.cidade || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, cidade: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Estado</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: SP"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={formEdit.estado || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, estado: e.target.value }))}
+                  />
+                </div>
+                <div className="flex flex-col space-y-1 col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Observações</label>
+                  <textarea
+                    placeholder="Adicione observações relevantes sobre o cliente"
+                    rows={4}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    value={formEdit.observacoes || ""}
+                    onChange={e => setFormEdit(f => ({ ...f, observacoes: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  onClick={() => setClienteEditando(null)}
+                  disabled={salvando}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                  disabled={salvando}
+                >
+                  {salvando ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço</Label>
-              <Input id="endereco" value={formEdit.endereco || ""} onChange={e => setFormEdit(f => ({ ...f, endereco: e.target.value }))} />
-              <Label htmlFor="complemento">Complemento</Label>
-              <Input id="complemento" value={formEdit.complemento || ""} onChange={e => setFormEdit(f => ({ ...f, complemento: e.target.value }))} />
-              <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" value={formEdit.cidade || ""} onChange={e => setFormEdit(f => ({ ...f, cidade: e.target.value }))} />
-              <Label htmlFor="estado">Estado</Label>
-              <Input id="estado" value={formEdit.estado || ""} onChange={e => setFormEdit(f => ({ ...f, estado: e.target.value }))} />
-              <Label htmlFor="cep">CEP</Label>
-              <Input id="cep" value={formEdit.cep || ""} onChange={e => setFormEdit(f => ({ ...f, cep: e.target.value }))} />
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea id="observacoes" value={formEdit.observacoes || ""} onChange={e => setFormEdit(f => ({ ...f, observacoes: e.target.value }))} />
-            </div>
-            <DialogFooter className="col-span-1 md:col-span-2">
-              <Button type="submit" disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</Button>
-              <Button type="button" variant="outline" onClick={() => setClienteEditando(null)}>
-                Cancelar
-              </Button>
-            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

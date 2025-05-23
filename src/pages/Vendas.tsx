@@ -100,6 +100,8 @@ const Vendas = () => {
   // Cálculos para os cards de resumo
   const totalVendas = vendasFiltradas.length;
   const valorTotalVendas = vendasFiltradas.reduce((acc, venda) => acc + venda.valor, 0);
+  const totalComissaoImobiliaria = vendasFiltradas.reduce((acc, venda) => acc + (venda.comissao_imobiliaria || 0), 0);
+  const totalComissaoCorretor = vendasFiltradas.reduce((acc, venda) => acc + (venda.comissao_corretor || 0), 0);
   const tiposImovel = useMemo(() => {
     return vendasFiltradas.reduce((acc, venda) => {
       acc[venda.tipoImovel] = (acc[venda.tipoImovel] || 0) + 1;
@@ -123,7 +125,7 @@ const Vendas = () => {
       </div>
 
       {/* Cards de resumo coloridos, modernos e responsivos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg">
           <CardContent className="py-6 flex flex-col items-center justify-center">
             <div className="flex items-center gap-2 mb-2">
@@ -161,6 +163,24 @@ const Vendas = () => {
             </div>
           </CardContent>
         </Card>
+        <Card className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white shadow-lg">
+          <CardContent className="py-6 flex flex-col items-center justify-center">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart className="w-6 h-6" />
+              <span className="text-lg font-semibold">Total de Comissões da Imobiliária</span>
+            </div>
+            <div className="text-3xl font-bold">{formatarMoeda(totalComissaoImobiliaria)}</div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-r from-pink-500 to-pink-700 text-white shadow-lg">
+          <CardContent className="py-6 flex flex-col items-center justify-center">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart className="w-6 h-6" />
+              <span className="text-lg font-semibold">Total de Comissões do Corretor</span>
+            </div>
+            <div className="text-3xl font-bold">{formatarMoeda(totalComissaoCorretor)}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabela detalhada de vendas restaurada */}
@@ -180,7 +200,8 @@ const Vendas = () => {
                     <th className="text-center py-2 px-4 border-b">Valor</th>
                     <th className="text-center py-2 px-4 border-b">Comissão Imobiliária</th>
                     <th className="text-center py-2 px-4 border-b">Comissão do Corretor</th>
-                    <th className="text-left py-2 px-4 border-b">Tipo</th>
+                    <th className="text-center py-2 px-4 border-b">Tipo</th>
+                    <th className="text-center py-2 px-4 border-b">Nota Fiscal</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -192,8 +213,11 @@ const Vendas = () => {
                       <td className="py-2 px-4 border-b text-blue-600 font-semibold text-center">{formatarMoeda(venda.valor)}</td>
                       <td className="py-2 px-4 border-b text-center">{formatarMoeda(venda.comissao_imobiliaria || 0)}</td>
                       <td className="py-2 px-4 border-b text-center">{formatarMoeda(venda.comissao_corretor || 0)}</td>
-                      <td className="py-2 px-4 border-b">
+                      <td className="py-2 px-4 border-b text-center">
                         <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">{venda.tipoImovel}</span>
+                      </td>
+                      <td className="py-2 px-4 border-b text-center">
+                        <span className="px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-800">{venda.notaFiscal || '-'}</span>
                       </td>
                     </tr>
                   ))}

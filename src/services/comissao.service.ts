@@ -68,6 +68,7 @@ export const adicionarComissao = async (
         status: comissao.status,
         status_valor: comissao.statusValor || "Atualizado" as StatusValor,
         user_id: userId,
+        nota_fiscal: comissao.nota_fiscal,
       })
       .select();
 
@@ -95,6 +96,7 @@ export const adicionarComissao = async (
         justificativa: data[0].justificativa,
         createdAt: data[0].created_at,
         updatedAt: data[0].updated_at,
+        nota_fiscal: data[0].nota_fiscal,
       };
 
       return novaComissao;
@@ -132,6 +134,7 @@ export const atualizarComissao = async (
     if (comissaoAtualizada.status !== undefined) atualizacoes.status = comissaoAtualizada.status;
     if (comissaoAtualizada.statusValor !== undefined) atualizacoes.status_valor = comissaoAtualizada.statusValor;
     if (comissaoAtualizada.justificativa !== undefined) atualizacoes.justificativa = comissaoAtualizada.justificativa;
+    if (comissaoAtualizada.nota_fiscal !== undefined) atualizacoes.nota_fiscal = comissaoAtualizada.nota_fiscal;
 
     const { error } = await supabase
       .from("comissoes")
@@ -141,7 +144,29 @@ export const atualizarComissao = async (
     if (error) {
       throw error;
     }
-    
+    // --- SINCRONIZAR COM VENDA ---
+    // Buscar a comissão para pegar o vendaId
+    const { data: comissaoData, error: errorComissao } = await supabase
+      .from("comissoes")
+      .select("venda_id")
+      .eq("id", id)
+      .single();
+    if (!errorComissao && comissaoData && comissaoData.venda_id) {
+      const vendaUpdates: any = {};
+      if (comissaoAtualizada.valorComissaoImobiliaria !== undefined) {
+        vendaUpdates.comissao_imobiliaria = comissaoAtualizada.valorComissaoImobiliaria;
+      }
+      if (comissaoAtualizada.valorComissaoCorretor !== undefined) {
+        vendaUpdates.comissao_corretor = comissaoAtualizada.valorComissaoCorretor;
+      }
+      if (Object.keys(vendaUpdates).length > 0) {
+        await supabase
+          .from("vendas")
+          .update(vendaUpdates)
+          .eq("id", comissaoData.venda_id);
+      }
+    }
+    // --- FIM SINCRONAÇÃO ---
     toast({
       title: "Comissão atualizada",
       description: "Os dados da comissão foram atualizados.",

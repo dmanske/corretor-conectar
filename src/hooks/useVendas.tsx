@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -199,20 +198,41 @@ export const useVendas = () => {
       }
 
       setVendas(vendas.map(v => v.id === id ? { ...v, ...vendaAtualizada, updatedAt: new Date().toISOString() } : v));
+      
+      // Atualizar as comissões relacionadas a essa venda
+      try {
+        const comissoesRelacionadas = await getComissoesByVendaId(id);
+        if (comissoesRelacionadas && comissoesRelacionadas.length > 0) {
+          await Promise.all(comissoesRelacionadas.map(async (comissao) => {
+            const atualizacoesComissao: any = {};
+            if (vendaAtualizada.comissao_imobiliaria !== undefined) {
+              atualizacoesComissao.valorComissaoImobiliaria = vendaAtualizada.comissao_imobiliaria;
+            }
+            if (vendaAtualizada.comissao_corretor !== undefined) {
+              atualizacoesComissao.valorComissaoCorretor = vendaAtualizada.comissao_corretor;
+            }
+            if (vendaAtualizada.valor !== undefined) {
+              atualizacoesComissao.valorVenda = vendaAtualizada.valor;
+            }
+            if (Object.keys(atualizacoesComissao).length > 0) {
+              await atualizarComissao(comissao.id, atualizacoesComissao);
+            }
+          }));
+        }
+      } catch (errorComissao) {
+        console.error("Erro ao atualizar comissões:", errorComissao);
+        toast({
+          variant: "warning",
+          title: "Atenção",
+          description: "A venda foi atualizada, mas houve um problema ao atualizar as comissões relacionadas."
+        });
+      }
+
       toast({
         title: "Venda atualizada",
         description: "Os dados da venda foram atualizados.",
         variant: "success"
       });
-
-      // Atualizar as comissões relacionadas a essa venda
-      const comissoesRelacionadas = getComissoesByVendaId(id);
-      for (const comissao of comissoesRelacionadas) {
-        await atualizarComissao(comissao.id, {
-          ...(vendaAtualizada.comissao_imobiliaria !== undefined && { valorComissaoImobiliaria: vendaAtualizada.comissao_imobiliaria }),
-          ...(vendaAtualizada.comissao_corretor !== undefined && { valorComissaoCorretor: vendaAtualizada.comissao_corretor })
-        });
-      }
 
       return true;
     } catch (error) {

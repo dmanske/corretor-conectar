@@ -89,6 +89,13 @@ const ClienteDetalhe = () => {
     }
   };
   
+  // Função para converter valor formatado para número
+  function parseValor(valor: string | number) {
+    if (typeof valor === "number") return valor;
+    if (!valor) return 0;
+    return parseFloat(valor.replace(/\./g, "").replace(",", "."));
+  }
+  
   // Função para abrir modal de edição
   const abrirModalEditarVenda = (venda: any) => {
     setVendaEditando(venda);
@@ -106,6 +113,9 @@ const ClienteDetalhe = () => {
     setSalvandoVenda(true);
     await atualizarVenda(vendaEditando.id, {
       ...formVenda,
+      valor: parseValor(formVenda.valor),
+      comissao_imobiliaria: parseValor(formVenda.comissao_imobiliaria),
+      comissao_corretor: parseValor(formVenda.comissao_corretor),
       observacoes: formVenda.observacoes
     });
     setSalvandoVenda(false);
@@ -116,6 +126,33 @@ const ClienteDetalhe = () => {
       variant: "success"
     });
   };
+
+  // Função para formatar valor inicial ao abrir o modal
+  function formatarValorInicial(valor: string | number) {
+    if (typeof valor === "number") {
+      return valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (typeof valor === "string" && valor.includes(",")) {
+      return valor;
+    }
+    const num = parseFloat(valor);
+    if (!isNaN(num)) {
+      return num.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return "";
+  }
+
+  // Ao abrir o modal de edição de venda, garantir que os valores estejam formatados
+  useEffect(() => {
+    if (vendaEditando) {
+      setFormVenda((prev: any) => ({
+        ...prev,
+        valor: formatarValorInicial(vendaEditando.valor),
+        comissao_imobiliaria: formatarValorInicial(vendaEditando.comissao_imobiliaria),
+        comissao_corretor: formatarValorInicial(vendaEditando.comissao_corretor)
+      }));
+    }
+  }, [vendaEditando]);
 
   // Função para excluir venda
   const handleExcluirVenda = async () => {
@@ -162,13 +199,41 @@ const ClienteDetalhe = () => {
     }
   };
   
-  // Função utilitária para criar datas UTC a partir de 'YYYY-MM-DD'
-  function parseDateUTC(dateString) {
-    if (!dateString) return null;
-    // Aceita tanto 'YYYY-MM-DD' quanto 'YYYY-MM-DDTHH:mm:ss' (pega só a data)
-    const [datePart] = dateString.split('T');
-    const [year, month, day] = datePart.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day));
+  // Funções de máscara para CPF, telefone e CEP
+  function maskTelefone(value: string) {
+    return value
+      .replace(/\D/g, "")
+      .replace(/^(.{0,2})(.{0,1})(.{0,4})(.{0,4}).*/, (m, p1, p2, p3, p4) => {
+        let out = "";
+        if (p1) out += `(${p1}`;
+        if (p1 && p1.length === 2) out += ") ";
+        if (p2) out += p2;
+        if (p3) out += ` ${p3}`;
+        if (p4) out += `-${p4}`;
+        return out;
+      })
+      .slice(0, 16);
+  }
+  function maskCPF(value: string) {
+    return value
+      .replace(/\D/g, "")
+      .slice(0, 11)
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  function maskCEP(value: string) {
+    return value.replace(/\D/g, "").replace(/(\d{5})(\d{1,3})/, "$1-$2").slice(0, 9);
+  }
+  
+  // Função de máscara para moeda (R$)
+  function maskValor(value: string | number) {
+    let v = String(value).replace(/\D/g, "");
+    v = (parseInt(v, 10) || 0).toString();
+    if (v.length === 0) return "";
+    if (v.length === 1) return "0,0" + v;
+    if (v.length === 2) return "0," + v;
+    return v.replace(/(\d+)(\d{2})$/, "$1,$2").replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
   }
   
   if (carregando) {
@@ -471,42 +536,96 @@ const ClienteDetalhe = () => {
       </Modal>
 
       <Dialog open={!!vendaEditando} onOpenChange={open => { if (!open) setVendaEditando(null); }}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Venda</DialogTitle>
+            <DialogTitle>Edite os dados da venda</DialogTitle>
+            <p className="text-slate-500 text-sm mt-1">Atualize as informações da venda abaixo. Campos marcados com <span className='text-red-500'>*</span> são obrigatórios.</p>
           </DialogHeader>
           {vendaEditando && (
-            <form onSubmit={e => { e.preventDefault(); salvarEdicaoVenda(); }} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Tipo do imóvel</label>
-                <input className="w-full border rounded px-2 py-1" value={formVenda.tipoImovel || ''} onChange={e => setFormVenda(f => ({ ...f, tipoImovel: e.target.value }))} required />
+            <form onSubmit={e => { e.preventDefault(); salvarEdicaoVenda(); }}>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col space-y-1 col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Tipo do imóvel <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Apartamento, Casa, etc."
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                      value={formVenda.tipoImovel || ''}
+                      onChange={e => setFormVenda(f => ({ ...f, tipoImovel: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Valor <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 250.000,00"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                      value={formVenda.valor || ''}
+                      onChange={e => setFormVenda(f => ({ ...f, valor: maskValor(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Data da venda <span className="text-red-500">*</span></label>
+                    <input
+                      type="date"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                      value={formVenda.dataVenda ? formVenda.dataVenda.slice(0,10) : ''}
+                      onChange={e => setFormVenda(f => ({ ...f, dataVenda: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Comissão da Imobiliária (R$)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 15.000,00"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={formVenda.comissao_imobiliaria || ''}
+                      onChange={e => setFormVenda(f => ({ ...f, comissao_imobiliaria: maskValor(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Comissão do Corretor (R$)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 7.500,00"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={formVenda.comissao_corretor || ''}
+                      onChange={e => setFormVenda(f => ({ ...f, comissao_corretor: maskValor(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1 col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Observações</label>
+                    <textarea
+                      placeholder="Adicione observações relevantes sobre a venda"
+                      rows={4}
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      value={formVenda.observacoes || ''}
+                      onChange={e => setFormVenda(f => ({ ...f, observacoes: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+                  <button
+                    type="button"
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    onClick={() => setVendaEditando(null)}
+                    disabled={salvandoVenda}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                    disabled={salvandoVenda}
+                  >
+                    {salvandoVenda ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Valor</label>
-                <input className="w-full border rounded px-2 py-1" type="number" value={formVenda.valor || ''} onChange={e => setFormVenda(f => ({ ...f, valor: e.target.value }))} required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Data da venda</label>
-                <input className="w-full border rounded px-2 py-1" type="date" value={formVenda.dataVenda ? formVenda.dataVenda.slice(0,10) : ''} onChange={e => setFormVenda(f => ({ ...f, dataVenda: e.target.value }))} required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Comissão da Imobiliária (R$)</label>
-                <input className="w-full border rounded px-2 py-1" type="number" value={formVenda.comissao_imobiliaria || ''} onChange={e => setFormVenda(f => ({ ...f, comissao_imobiliaria: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Comissão do Corretor (R$)</label>
-                <input className="w-full border rounded px-2 py-1" type="number" value={formVenda.comissao_corretor || ''} onChange={e => setFormVenda(f => ({ ...f, comissao_corretor: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Observações</label>
-                <textarea className="w-full border rounded px-2 py-1" value={formVenda.observacoes || ''} onChange={e => setFormVenda(f => ({ ...f, observacoes: e.target.value }))} />
-              </div>
-              <DialogFooter>
-                <Button type="submit" disabled={salvandoVenda}>{salvandoVenda ? "Salvando..." : "Salvar"}</Button>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancelar</Button>
-                </DialogClose>
-              </DialogFooter>
             </form>
           )}
         </DialogContent>
@@ -541,9 +660,9 @@ const ClienteDetalhe = () => {
               <Label htmlFor="email">E-mail</Label>
               <Input id="email" type="email" value={formEdit.email || ""} onChange={e => setFormEdit(f => ({ ...f, email: e.target.value }))} required />
               <Label htmlFor="telefone">Telefone</Label>
-              <Input id="telefone" value={formEdit.telefone || ""} onChange={e => setFormEdit(f => ({ ...f, telefone: e.target.value }))} required />
+              <Input id="telefone" value={maskTelefone(formEdit.telefone || "")} onChange={e => setFormEdit(f => ({ ...f, telefone: maskTelefone(e.target.value) }))} required />
               <Label htmlFor="cpf">CPF</Label>
-              <Input id="cpf" value={formEdit.cpf || ""} onChange={e => setFormEdit(f => ({ ...f, cpf: e.target.value }))} required />
+              <Input id="cpf" value={maskCPF(formEdit.cpf || "")} onChange={e => setFormEdit(f => ({ ...f, cpf: maskCPF(e.target.value) }))} required />
               <Label htmlFor="dataNascimento">Data de Nascimento</Label>
               <Input id="dataNascimento" type="date" value={formEdit.dataNascimento || ""} onChange={e => setFormEdit(f => ({ ...f, dataNascimento: e.target.value }))} required />
             </div>
@@ -557,7 +676,7 @@ const ClienteDetalhe = () => {
               <Label htmlFor="estado">Estado</Label>
               <Input id="estado" value={formEdit.estado || ""} onChange={e => setFormEdit(f => ({ ...f, estado: e.target.value }))} />
               <Label htmlFor="cep">CEP</Label>
-              <Input id="cep" value={formEdit.cep || ""} onChange={e => setFormEdit(f => ({ ...f, cep: e.target.value }))} />
+              <Input id="cep" value={maskCEP(formEdit.cep || "")} onChange={e => setFormEdit(f => ({ ...f, cep: maskCEP(e.target.value) }))} />
               <Label htmlFor="observacoes">Observações</Label>
               <Textarea id="observacoes" value={formEdit.observacoes || ""} onChange={e => setFormEdit(f => ({ ...f, observacoes: e.target.value }))} />
             </div>

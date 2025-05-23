@@ -1,39 +1,61 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Save, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/components/ui/use-toast";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import { useClientes } from "@/hooks/useClientes";
+import { useToast } from "@/components/ui/use-toast";
 import axios from "axios";
 
-const NovoCliente = () => {
+const Input = ({ label, type = "text", placeholder, className = "", required = false, value, onChange, name }) => (
+  <div className={`flex flex-col space-y-1 ${className}`}>
+    <label className="text-sm font-medium text-gray-700">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      type={type}
+      placeholder={placeholder}
+      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      required={required}
+      value={value}
+      onChange={onChange}
+      name={name}
+    />
+  </div>
+);
+
+const Textarea = ({ label, placeholder, className = "", value, onChange, name }) => (
+  <div className={`flex flex-col space-y-1 ${className}`}>
+    <label className="text-sm font-medium text-gray-700">{label}</label>
+    <textarea
+      placeholder={placeholder}
+      rows={4}
+      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+      value={value}
+      onChange={onChange}
+      name={name}
+    />
+  </div>
+);
+
+export default function NovoCliente() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { adicionarCliente } = useClientes();
-  
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
-    endereco: "",
-    complemento: "",
-    numero: "", // Added the numero field
+    email: "",
     telefone: "",
-    cidade: "",
-    estado: "",
-    cep: "",
     cpf: "",
     dataNascimento: "",
-    email: "",
+    endereco: "",
+    complemento: "",
+    cep: "",
+    cidade: "",
+    estado: "",
     observacoes: ""
   });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Máscaras
-  function maskTelefone(value: string) {
+  function maskTelefone(value) {
     return value
       .replace(/\D/g, "")
       .replace(/^(.{0,2})(.{0,1})(.{0,4})(.{0,4}).*/, (m, p1, p2, p3, p4) => {
@@ -47,7 +69,7 @@ const NovoCliente = () => {
       })
       .slice(0, 16);
   }
-  function maskCPF(value: string) {
+  function maskCPF(value) {
     return value
       .replace(/\D/g, "")
       .slice(0, 11)
@@ -55,11 +77,11 @@ const NovoCliente = () => {
       .replace(/(\d{3})(\d)/, "$1.$2")
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
   }
-  function maskCEP(value: string) {
+  function maskCEP(value) {
     return value.replace(/\D/g, "").replace(/(\d{5})(\d{1,3})/, "$1-$2").slice(0, 9);
   }
-  
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+
+  const handleChange = async (e) => {
     const { name, value } = e.target;
     let maskedValue = value;
     if (name === "telefone") maskedValue = maskTelefone(value);
@@ -84,11 +106,9 @@ const NovoCliente = () => {
       } catch {}
     }
   };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validações básicas
     if (!formData.nome || !formData.email || !formData.telefone || !formData.cpf || !formData.dataNascimento) {
       toast({
         variant: "destructive",
@@ -97,13 +117,9 @@ const NovoCliente = () => {
       });
       return;
     }
-    
     setIsSubmitting(true);
-    
     try {
-      // Chamar a função adicionarCliente do hook useClientes
       const resultado = await adicionarCliente(formData);
-      
       if (resultado) {
         toast({
           title: "Cliente cadastrado!",
@@ -114,16 +130,6 @@ const NovoCliente = () => {
         throw new Error("Falha ao cadastrar cliente");
       }
     } catch (error) {
-      console.error("Erro ao cadastrar cliente:", error);
-      // Log detalhado para ajudar a depurar
-      if (error.response) {
-        console.error("Resposta do servidor:", error.response.data);
-        console.error("Status:", error.response.status);
-      } else if (error.request) {
-        console.error("Sem resposta recebida:", error.request);
-      } else {
-        console.error("Erro ao configurar requisição:", error.message);
-      }
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar",
@@ -133,188 +139,123 @@ const NovoCliente = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/app/clientes")} className="mr-4">
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Voltar
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Novo Cliente</h2>
-          <p className="text-slate-500">Adicione um novo cliente ao sistema.</p>
-        </div>
+    <div className="max-w-4xl mx-auto p-6 bg-white">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Adicione um novo cliente ao sistema
+        </h1>
+        <div className="h-1 w-20 bg-blue-500 rounded"></div>
       </div>
-      
-      <Card>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="pt-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Dados básicos */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome">Nome Completo <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="nome"
-                    name="nome"
-                    placeholder="Ex: João Silva"
-                    value={formData.nome}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Ex: joao@email.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="telefone"
-                    name="telefone"
-                    placeholder="Ex: (11) 9 9999-9999"
-                    value={formData.telefone}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="cpf"
-                    name="cpf"
-                    placeholder="Ex: 123.456.789-00"
-                    value={formData.cpf}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="dataNascimento">Data de Nascimento <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="dataNascimento"
-                    name="dataNascimento"
-                    type="date"
-                    value={formData.dataNascimento}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-              
-              {/* Endereço */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="endereco">Endereço</Label>
-                  <Input
-                    id="endereco"
-                    name="endereco"
-                    placeholder="Ex: Rua das Flores, 123"
-                    value={formData.endereco}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="complemento">Complemento</Label>
-                  <Input
-                    id="complemento"
-                    name="complemento"
-                    placeholder="Ex: Apto 101"
-                    value={formData.complemento}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cidade">Cidade</Label>
-                    <Input
-                      id="cidade"
-                      name="cidade"
-                      placeholder="Ex: São Paulo"
-                      value={formData.cidade}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="estado">Estado</Label>
-                    <Input
-                      id="estado"
-                      name="estado"
-                      placeholder="Ex: SP"
-                      value={formData.estado}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="cep">CEP</Label>
-                  <Input
-                    id="cep"
-                    name="cep"
-                    placeholder="Ex: 12345-678"
-                    value={formData.cep}
-                    onChange={handleChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    name="observacoes"
-                    placeholder="Adicione observações relevantes sobre o cliente"
-                    rows={5}
-                    value={formData.observacoes}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="flex justify-between border-t bg-slate-50 p-4">
-            <Button variant="outline" type="button" onClick={() => navigate("/app/clientes")} disabled={isSubmitting}>
-              <X className="mr-2 h-4 w-4" />
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input 
+              label="Nome Completo" 
+              placeholder="Ex: João Silva"
+              className="col-span-2" 
+              required 
+              name="nome"
+              value={formData.nome}
+              onChange={handleChange}
+            />
+            <Input 
+              label="E-mail" 
+              type="email"
+              placeholder="Ex: joao@email.com"
+              required 
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+            />
+            <Input 
+              label="Telefone" 
+              placeholder="Ex: (11) 9 9999-9999"
+              required 
+              name="telefone"
+              value={formData.telefone}
+              onChange={handleChange}
+            />
+            <Input 
+              label="CPF" 
+              placeholder="Ex: 123.456.789-00"
+              required 
+              name="cpf"
+              value={formData.cpf}
+              onChange={handleChange}
+            />
+            <Input 
+              label="Data de Nascimento" 
+              type="date"
+              required 
+              name="dataNascimento"
+              value={formData.dataNascimento}
+              onChange={handleChange}
+            />
+            <Input 
+              label="Endereço" 
+              placeholder="Ex: Rua das Flores, 123"
+              className="col-span-2" 
+              name="endereco"
+              value={formData.endereco}
+              onChange={handleChange}
+            />
+            <Input 
+              label="Complemento" 
+              placeholder="Ex: Apto 101"
+              name="complemento"
+              value={formData.complemento}
+              onChange={handleChange}
+            />
+            <Input 
+              label="CEP" 
+              placeholder="Ex: 12345-678"
+              name="cep"
+              value={formData.cep}
+              onChange={handleChange}
+            />
+            <Input 
+              label="Cidade" 
+              placeholder="Ex: São Paulo"
+              name="cidade"
+              value={formData.cidade}
+              onChange={handleChange}
+            />
+            <Input 
+              label="Estado" 
+              placeholder="Ex: SP"
+              name="estado"
+              value={formData.estado}
+              onChange={handleChange}
+            />
+            <Textarea 
+              label="Observações" 
+              placeholder="Adicione observações relevantes sobre o cliente"
+              className="col-span-2" 
+              name="observacoes"
+              value={formData.observacoes}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              onClick={() => navigate('/app/clientes')}
+            >
               Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar Cliente
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
-};
-
-export default NovoCliente;
+}
