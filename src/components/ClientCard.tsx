@@ -22,6 +22,7 @@ interface ClientCardProps {
   clientSince: Date | string;
   phone: string;
   email: string;
+  cpf: string;
   isPremium?: boolean;
   address: {
     street: string;
@@ -64,6 +65,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({
   clientSince,
   phone,
   email,
+  cpf,
   isPremium,
   address,
   birthday,
@@ -167,17 +169,18 @@ export const ClientCard: React.FC<ClientCardProps> = ({
         id: venda.id,
         valor_total: venda.value,
         data_venda: venda.date,
-        produto: venda.property,
+        produto: venda.type,
         plano: venda.type,
         valor_mensal: venda.value / 12,
         status: 'Pendente',
         cliente_nome: name,
-        cliente_cpf: '123.456.789-00',
+        cliente_cpf: cpf,
         cliente_telefone: phone,
         observacoes: venda.observacoes,
         comissao_corretor: venda.comissao_corretor,
         comissao_imobiliaria: venda.comissao_imobiliaria,
-        descricao: venda.descricao
+        descricao: venda.descricao,
+        endereco: venda.property
       });
       setIsDetalhesVendaModalOpen(true);
     }
@@ -417,105 +420,59 @@ export const ClientCard: React.FC<ClientCardProps> = ({
         title="Informações completas da venda"
       >
         <div className="space-y-6">
-          {/* Sobre */}
-          {selectedVenda?.descricao && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Sobre</h4>
-              <p className="text-sm text-gray-700">{selectedVenda.descricao}</p>
-            </div>
-          )}
-
-          {/* Cabeçalho */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <div>
-                {/* Removido o título 'Detalhes da Venda' */}
-                <p className="text-sm text-gray-500">Informações completas da venda</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Informações Principais */}
+          {/* Valor/Data */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">Valor Total</div>
-              <div className="text-xl font-semibold text-gray-900">
-                {selectedVenda?.valor_total.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                })}
+              <div className="text-2xl font-bold text-gray-900">
+                {selectedVenda?.valor_total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500 mb-1">Data da Venda</div>
-              <div className="text-xl font-semibold text-gray-900">
+              <div className="text-2xl font-bold text-gray-900">
                 {selectedVenda?.data_venda ? formatDateString(selectedVenda.data_venda, 'dd/MM/yyyy') : '-'}
               </div>
             </div>
           </div>
 
           {/* Comissões */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Comissões</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Comissão do Corretor</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {selectedVenda?.comissao_corretor !== undefined
-                    ? selectedVenda.comissao_corretor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                    : '-'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Comissão da Imobiliária</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {selectedVenda?.comissao_imobiliaria !== undefined
-                    ? selectedVenda.comissao_imobiliaria.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                    : '-'}
-                </span>
-              </div>
-              <div className="flex justify-between pt-2 border-t">
-                <span className="text-sm font-medium text-gray-900">Total de Comissões</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {selectedVenda?.comissao_corretor !== undefined && selectedVenda?.comissao_imobiliaria !== undefined
-                    ? (selectedVenda.comissao_corretor + selectedVenda.comissao_imobiliaria).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                    : '-'}
-                </span>
-              </div>
+          <div>
+            <h4 className="text-base font-semibold mb-2">Comissões</h4>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-2 flex justify-between">
+              <span>Comissão do Corretor</span>
+              <span>{selectedVenda?.comissao_corretor !== undefined ? selectedVenda.comissao_corretor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</span>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-2 flex justify-between">
+              <span>Comissão da Imobiliária</span>
+              <span>{selectedVenda?.comissao_imobiliaria !== undefined ? selectedVenda.comissao_imobiliaria.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</span>
+            </div>
+            <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex justify-between font-semibold">
+              <span>Total de Comissões</span>
+              <span>{selectedVenda?.comissao_corretor !== undefined && selectedVenda?.comissao_imobiliaria !== undefined ? (selectedVenda.comissao_corretor + selectedVenda.comissao_imobiliaria).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</span>
             </div>
           </div>
 
           {/* Informações do Cliente */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Informações do Cliente</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Nome</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_nome}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">CPF</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_cpf}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Telefone</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_telefone}</span>
-              </div>
+          <div>
+            <h4 className="text-base font-semibold mb-2">Informações do Cliente</h4>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 gap-2">
+              <div className="flex justify-between"><span className="text-gray-500">Nome</span><span className="font-medium text-gray-900">{selectedVenda?.cliente_nome}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">CPF</span><span className="font-medium text-gray-900">{selectedVenda?.cliente_cpf}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Telefone</span><span className="font-medium text-gray-900">{selectedVenda?.cliente_telefone}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Email</span><span className="font-medium text-gray-900">{email}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Endereço</span><span className="font-medium text-gray-900">{address.street}, {address.number}{address.complement ? `, ${address.complement}` : ''} - {address.city}/{address.state}</span></div>
             </div>
           </div>
 
-          {/* Observações */}
-          {selectedVenda?.observacoes && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Observações</h4>
-              <p className="text-sm text-gray-600">{selectedVenda.observacoes}</p>
+          {/* Detalhes do Imóvel */}
+          <div>
+            <h4 className="text-base font-semibold mb-2">Detalhes do Imóvel</h4>
+            <div className="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 gap-2">
+              <div className="flex justify-between"><span className="text-gray-500">Tipo</span><span className="font-medium text-gray-900">{selectedVenda?.produto}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Nome do Imóvel</span><span className="font-medium text-gray-900">{selectedVenda?.endereco}</span></div>
             </div>
-          )}
+          </div>
 
           {/* Botão de Fechar */}
           <div className="flex justify-end pt-4 border-t">

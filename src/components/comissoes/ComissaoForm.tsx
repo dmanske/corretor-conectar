@@ -38,12 +38,13 @@ const ComissaoForm = ({
   const [novaComissao, setNovaComissao] = useState<Partial<Comissao>>({
     cliente: "",
     imovel: "",
-    valorVenda: 0,
-    valorComissaoImobiliaria: 0,
-    valorComissaoCorretor: 0,
+    valorVenda: "",
+    valorComissaoImobiliaria: "",
+    valorComissaoCorretor: "",
     dataContrato: format(new Date(), "yyyy-MM-dd"),
     dataPagamento: null,
-    status: "Pendente"
+    status: "Pendente",
+    nota_fiscal: ""
   });
   
   const [metaValor, setMetaValor] = useState(currentMeta || 0);
@@ -108,12 +109,10 @@ const ComissaoForm = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
     if (name === "valorVenda" || name === "valorComissaoImobiliaria" || name === "valorComissaoCorretor") {
-      const valorNumerico = parseFloat(value);
       setNovaComissao({
         ...novaComissao,
-        [name]: valorNumerico
+        [name]: maskValor(value)
       });
     } else if (name === "metaValor") {
       setMetaValor(parseFloat(value));
@@ -201,8 +200,8 @@ const ComissaoForm = ({
     if (isMetaForm) {
       onAddComissao({ 
         valorComissaoCorretor: metaValor, 
-        dataVenda: `${anoSelecionado}-${mesSelecionado.toString().padStart(2, '0')}-01`, // Usamos para passar o mês/ano
-        dataContrato: `${mesSelecionado}-${anoSelecionado}` // Usamos para passar o mês/ano em outro formato
+        dataVenda: `${anoSelecionado}-${mesSelecionado.toString().padStart(2, '0')}-01`,
+        dataContrato: `${mesSelecionado}-${anoSelecionado}`
       });
       onOpenChange(false);
       toast({
@@ -223,10 +222,9 @@ const ComissaoForm = ({
 
     // Lógica especial para status Recebido: registrar valor restante automaticamente
     if (comissaoParaEditar && novaComissao.status === "Recebido") {
-      // Buscar recebimentos atuais
       const lista = await getRecebimentosByComissaoId(comissaoParaEditar.id);
       const totalRecebido = lista.reduce((acc, r) => acc + parseValor(r.valor), 0);
-      const totalComissao = parseValor(novaComissao.valorComissaoCorretor);
+      const totalComissao = parseValor(novaComissao.valorComissaoCorretor || "0");
       const valorRestante = totalComissao - totalRecebido;
       if (valorRestante > 0) {
         await adicionarRecebimento(comissaoParaEditar.id, valorRestante, new Date().toISOString().slice(0, 10));
@@ -235,9 +233,9 @@ const ComissaoForm = ({
 
     await onAddComissao({
       ...novaComissao,
-      valorVenda: parseValor(novaComissao.valorVenda),
-      valorComissaoImobiliaria: parseValor(novaComissao.valorComissaoImobiliaria),
-      valorComissaoCorretor: parseValor(novaComissao.valorComissaoCorretor)
+      valorVenda: parseValor(novaComissao.valorVenda || "0"),
+      valorComissaoImobiliaria: parseValor(novaComissao.valorComissaoImobiliaria || "0"),
+      valorComissaoCorretor: parseValor(novaComissao.valorComissaoCorretor || "0")
     });
     onOpenChange(false);
     
@@ -252,19 +250,20 @@ const ComissaoForm = ({
     setNovaComissao({
       cliente: "",
       imovel: "",
-      valorVenda: 0,
-      valorComissaoImobiliaria: 0,
-      valorComissaoCorretor: 0,
+      valorVenda: "",
+      valorComissaoImobiliaria: "",
+      valorComissaoCorretor: "",
       dataContrato: format(new Date(), "yyyy-MM-dd"),
       dataPagamento: null,
-      status: "Pendente"
+      status: "Pendente",
+      nota_fiscal: ""
     });
     setClienteSelecionadoId("");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>
             {isMetaForm 
@@ -381,7 +380,7 @@ const ComissaoForm = ({
                   name="valorVenda"
                   type="text"
                   value={novaComissao.valorVenda || ""}
-                  onChange={e => setNovaComissao({ ...novaComissao, valorVenda: maskValor(e.target.value) })}
+                  onChange={handleInputChange}
                   placeholder="0,00"
                   disabled={!!comissaoParaEditar}
                 />
@@ -393,7 +392,7 @@ const ComissaoForm = ({
                   name="valorComissaoImobiliaria"
                   type="text"
                   value={novaComissao.valorComissaoImobiliaria || ""}
-                  onChange={e => setNovaComissao({ ...novaComissao, valorComissaoImobiliaria: maskValor(e.target.value) })}
+                  onChange={handleInputChange}
                   placeholder="Ex: 7.500,00"
                 />
               </div>
@@ -404,7 +403,7 @@ const ComissaoForm = ({
                   name="valorComissaoCorretor"
                   type="text"
                   value={novaComissao.valorComissaoCorretor || ""}
-                  onChange={e => setNovaComissao({ ...novaComissao, valorComissaoCorretor: maskValor(e.target.value) })}
+                  onChange={handleInputChange}
                   placeholder="Ex: 3.500,00"
                 />
               </div>
@@ -447,62 +446,40 @@ const ComissaoForm = ({
                   </Select>
                 </div>
               )}
-            </div>
-            {novaComissao.status === "Recebido" && (
-              <div>
-                <Label htmlFor="dataPagamento">Data de Recebimento</Label>
-                <Input
-                  id="dataPagamento"
-                  name="dataPagamento"
-                  type="date"
-                  value={novaComissao.dataPagamento || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-            )}
-            {novaComissao.status === "Parcial" && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ marginBottom: 8 }}>
-                  <b>Recebimentos já feitos:</b>
-                  {recebimentos.length === 0 && <div className="text-slate-500">Nenhum recebimento lançado</div>}
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    {recebimentos.map((rec, idx) => (
-                      <div key={idx} style={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: 8,
-                        padding: '8px 16px',
-                        background: '#f9fafb',
-                        minWidth: 120,
-                        textAlign: 'center',
-                        position: 'relative'
-                      }}>
-                        <div style={{ fontWeight: 600 }}>R$ {rec.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-                        <div style={{ fontSize: 12 }}>{rec.data.split('-').reverse().join('/')}</div>
-                        <button
-                          style={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#aaa',
-                            padding: 0
-                          }}
-                          title="Excluir recebimento"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRecebimentoParaExcluir(rec);
-                          }}
-                        >
-                          <span style={{ fontSize: 14, fontWeight: 700 }}>&times;</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+              {novaComissao.status === "Recebido" && (
+                <div>
+                  <Label htmlFor="dataPagamento">Data de Recebimento</Label>
+                  <Input
+                    id="dataPagamento"
+                    name="dataPagamento"
+                    type="date"
+                    value={novaComissao.dataPagamento || ""}
+                    onChange={handleInputChange}
+                  />
                 </div>
-                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
+              )}
+            </div>
+            {novaComissao.status === "Parcial" && (
+              <div className="mt-2 p-4 rounded-lg border border-slate-200 bg-slate-50">
+                <div className="mb-2 font-semibold">Recebimentos já feitos:</div>
+                {recebimentos.length === 0 && <div className="text-slate-500 mb-2">Nenhum recebimento lançado</div>}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {recebimentos.map((rec, idx) => (
+                    <div key={idx} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center min-w-[110px] relative">
+                      <div className="font-bold text-green-700">R$ {rec.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                      <div className="text-xs text-slate-500">{rec.data.split('-').reverse().join('/')}</div>
+                      <button
+                        className="absolute top-1 right-2 text-slate-400 hover:text-red-500"
+                        title="Excluir recebimento"
+                        onClick={e => { e.stopPropagation(); setRecebimentoParaExcluir(rec); }}
+                      >
+                        <span className="text-lg font-bold">&times;</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid md:grid-cols-3 gap-4 items-end mb-2">
+                  <div>
                     <Label>Valor Recebido (R$)</Label>
                     <Input
                       type="number"
@@ -511,7 +488,7 @@ const ComissaoForm = ({
                       placeholder="Ex: 1.000,00"
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div>
                     <Label>Data do Recebimento</Label>
                     <Input
                       type="date"
@@ -519,28 +496,21 @@ const ComissaoForm = ({
                       onChange={e => setNovoRecebimento({ ...novoRecebimento, data: e.target.value })}
                     />
                   </div>
-                  <div style={{ flex: 'none' }}>
-                    <Button type="button" onClick={handleAdicionarRecebimento}>Adicionar</Button>
+                  <div>
+                    <Button type="button" className="w-full" onClick={handleAdicionarRecebimento}>Adicionar</Button>
                   </div>
                 </div>
-                <div style={{ marginTop: 8 }}>
+                <div className="mt-2">
                   <Label>Falta receber</Label>
-                  <div style={{
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    padding: '0.5rem',
-                    background: '#f9fafb',
-                    minHeight: 40
-                  }}>
-                    R$ {(parseValor(novaComissao.valorComissaoCorretor) - recebimentos.reduce((acc, r) => acc + parseValor(r.valor), 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <div className="border border-slate-200 rounded px-3 py-2 bg-white min-h-[40px]">
+                    R$ {(parseValor(novaComissao.valorComissaoCorretor || "0") - recebimentos.reduce((acc, r) => acc + parseValor(r.valor), 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
             )}
           </>
         )}
-        
-        <DialogFooter>
+        <DialogFooter className="flex flex-row justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

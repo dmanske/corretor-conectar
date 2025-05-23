@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Edit, Trash, Home, Plus, Eye } from "lucide-react";
+import { ArrowLeft, Edit, Trash, Home, Plus, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -311,6 +311,7 @@ const ClienteDetalhe = () => {
         clientSince={cliente.createdAt}
         phone={cliente.telefone}
         email={cliente.email}
+        cpf={cliente.cpf}
         isPremium={cliente.isPremium}
         address={{
           street: cliente.endereco,
@@ -323,10 +324,10 @@ const ClienteDetalhe = () => {
         birthday={cliente.dataNascimento}
         sales={vendasCliente.map(venda => ({
           id: venda.id,
-          property: venda.tipoImovel,
+          property: venda.endereco,
           date: venda.dataVenda,
           value: venda.valor,
-          type: venda.tipoImovel === 'Prédio' ? 'predio' : venda.tipoImovel === 'Comercial' ? 'comercial' : 'casa',
+          type: venda.tipoImovel,
           comissao_corretor: venda.comissao_corretor ?? venda.comissaoCorretor ?? venda.comissaoCorretor,
           comissao_imobiliaria: venda.comissao_imobiliaria ?? venda.comissaoImobiliaria ?? venda.comissaoImobiliaria,
           observacoes: venda.observacoes
@@ -352,7 +353,8 @@ const ClienteDetalhe = () => {
               cliente_telefone: cliente.telefone,
               observacoes: venda.observacao,
               comissao_imobiliaria: venda.comissao_imobiliaria,
-              comissao_corretor: venda.comissao_corretor
+              comissao_corretor: venda.comissao_corretor,
+              endereco: venda.endereco
             });
             setIsDetalhesVendaModalOpen(true);
           }
@@ -395,145 +397,68 @@ const ClienteDetalhe = () => {
       </AlertDialog>
 
       {/* Modal de Detalhes da Venda */}
-      <Modal
-        isOpen={isDetalhesVendaModalOpen}
-        onClose={() => setIsDetalhesVendaModalOpen(false)}
-        title={null}
-      >
-        <div className="space-y-6">
-          {/* Cabeçalho */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
+      {isDetalhesVendaModalOpen && selectedVenda && (
+        <Dialog open={isDetalhesVendaModalOpen} onOpenChange={setIsDetalhesVendaModalOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Informações Completas da Venda</DialogTitle>
+            </DialogHeader>
+            <div className="mb-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-2 mb-4">
+                <Calendar className="text-blue-500" />
+                <span className="text-blue-900 text-sm font-medium">Detalhes financeiros da transação.</span>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{selectedVenda?.id ? `Venda #${selectedVenda.id}` : ''}</h3>
-                <p className="text-sm text-gray-500">Informações completas da venda</p>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center">
+                  <span className="text-sm text-gray-500 mb-1">Valor Total</span>
+                  <span className="text-2xl font-bold text-gray-900">{formatarMoeda(selectedVenda.valor_total)}</span>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center">
+                  <span className="text-sm text-gray-500 mb-1">Data da Venda</span>
+                  <span className="text-2xl font-bold text-gray-900">{formatarData(selectedVenda.data_venda)}</span>
+                </div>
               </div>
-            </div>
-
-            {/* Informações Principais */}
-            <div className="flex items-center space-x-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                selectedVenda?.status === 'Pendente' ? 'bg-yellow-100 text-yellow-800' :
-                selectedVenda?.status === 'Aprovado' ? 'bg-green-100 text-green-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {selectedVenda?.status}
-              </span>
-            </div>
-          </div>
-
-          {/* Informações Principais */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Valor Total</div>
-              <div className="text-xl font-semibold text-gray-900">
-                {selectedVenda?.valor_total.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL'
-                })}
+              <div className="mb-4">
+                <h4 className="text-base font-semibold mb-2">Comissões</h4>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 mb-2 flex justify-between">
+                  <span>Comissão do Corretor</span>
+                  <span>{formatarMoeda(selectedVenda.comissao_corretor)}</span>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 mb-2 flex justify-between">
+                  <span>Comissão da Imobiliária</span>
+                  <span>{formatarMoeda(selectedVenda.comissao_imobiliaria)}</span>
+                </div>
+                <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 flex justify-between font-semibold">
+                  <span>Total de Comissões</span>
+                  <span>{formatarMoeda((selectedVenda.comissao_corretor || 0) + (selectedVenda.comissao_imobiliaria || 0))}</span>
+                </div>
               </div>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Data da Venda</div>
-              <div className="text-xl font-semibold text-gray-900">
-                {selectedVenda?.data_venda ? formatarData(selectedVenda.data_venda) : '-'}
+              <div className="mb-4">
+                <h4 className="text-base font-semibold mb-2">Informações do Cliente</h4>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 gap-2">
+                  <div className="flex justify-between"><span className="text-gray-500">Nome</span><span className="font-medium text-gray-900">{cliente.nome}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">CPF</span><span className="font-medium text-gray-900">{cliente.cpf}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Telefone</span><span className="font-medium text-gray-900">{cliente.telefone}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Email</span><span className="font-medium text-gray-900">{cliente.email}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Endereço</span><span className="font-medium text-gray-900">{cliente.endereco}</span></div>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Detalhes do Produto */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Detalhes do Produto</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Produto</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.produto}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Plano</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.plano}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Valor Mensal</span>
-                <span className="text-sm font-medium text-gray-900">
-                  {selectedVenda?.valor_mensal.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  })}
-                </span>
+              <div className="mb-4">
+                <h4 className="text-base font-semibold mb-2">Detalhes do Imóvel</h4>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 grid grid-cols-1 gap-2">
+                  <div className="flex justify-between"><span className="text-gray-500">Tipo</span><span className="font-medium text-gray-900">{selectedVenda.produto}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Nome do Imóvel</span><span className="font-medium text-gray-900">{selectedVenda.endereco}</span></div>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Informações do Cliente */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Informações do Cliente</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Nome</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_nome}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">CPF</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_cpf}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Telefone</span>
-                <span className="text-sm font-medium text-gray-900">{selectedVenda?.cliente_telefone}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Observações */}
-          {selectedVenda?.observacoes && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Observações</h4>
-              <p className="text-sm text-gray-600">{selectedVenda.observacoes}</p>
-            </div>
-          )}
-
-          {/* Botões de Ação */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <button
-              onClick={() => setIsDetalhesVendaModalOpen(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Fechar
-            </button>
-            {selectedVenda?.status === 'Pendente' && (
-              <>
-                <button
-                  onClick={() => {
-                    if (selectedVenda) {
-                      handleAprovarVenda(selectedVenda.id);
-                      setIsDetalhesVendaModalOpen(false);
-                    }
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  Aprovar Venda
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedVenda) {
-                      handleReprovarVenda(selectedVenda.id);
-                      setIsDetalhesVendaModalOpen(false);
-                    }
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Reprovar Venda
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </Modal>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Fechar</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={!!vendaEditando} onOpenChange={open => { if (!open) setVendaEditando(null); }}>
         <DialogContent className="max-w-2xl">
@@ -547,14 +472,21 @@ const ClienteDetalhe = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col space-y-1 col-span-2">
                     <label className="text-sm font-medium text-gray-700">Tipo do imóvel <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Apartamento, Casa, etc."
-                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
+                    <select
+                      name="tipoImovel"
+                      className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
                       value={formVenda.tipoImovel || ''}
                       onChange={e => setFormVenda(f => ({ ...f, tipoImovel: e.target.value }))}
-                    />
+                      required
+                    >
+                      <option value="">Selecione o tipo</option>
+                      <option value="Apartamento">Apartamento</option>
+                      <option value="Casa">Casa</option>
+                      <option value="Terreno">Terreno</option>
+                      <option value="Sala Comercial">Sala Comercial</option>
+                      <option value="Galpão">Galpão</option>
+                      <option value="Outros">Outros...</option>
+                    </select>
                   </div>
                   <div className="flex flex-col space-y-1">
                     <label className="text-sm font-medium text-gray-700">Valor <span className="text-red-500">*</span></label>

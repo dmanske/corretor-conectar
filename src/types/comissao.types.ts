@@ -1,4 +1,3 @@
-
 export type ComissaoStatus = "Pendente" | "Parcial" | "Recebido";
 export type StatusValor = "Atualizado" | "Desatualizado" | "Justificado";
 
@@ -22,6 +21,7 @@ export interface Comissao {
   justificativa?: string;
   createdAt?: string;
   updatedAt?: string;
+  nota_fiscal?: string;
 }
 
 export interface ComissaoTotais {
