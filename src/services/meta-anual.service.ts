@@ -3,7 +3,7 @@ import { MetaAnual, MetaAnualCreate, MetaAnualUpdate } from "@/types/meta-anual.
 
 export const metaAnualService = {
   async getByAno(ano: number): Promise<MetaAnual | null> {
-    const user = supabase.auth.user();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     const { data, error } = await supabase
       .from("metas_anuais")
@@ -19,7 +19,7 @@ export const metaAnualService = {
   },
 
   async create(meta: MetaAnualCreate): Promise<MetaAnual | null> {
-    const user = supabase.auth.user();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     const { data, error } = await supabase
       .from("metas_anuais")
@@ -34,7 +34,7 @@ export const metaAnualService = {
   },
 
   async update(id: string, meta: MetaAnualUpdate): Promise<MetaAnual | null> {
-    const user = supabase.auth.user();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
     const { data, error } = await supabase
       .from("metas_anuais")
