@@ -23,21 +23,7 @@ export const useVendas = () => {
         // Join with clientes to get cliente_nome
         const { data, error } = await supabase
           .from("vendas")
-          .select(`
-            id,
-            cliente_id,
-            tipo_imovel,
-            endereco,
-            valor,
-            data_venda,
-            observacoes,
-            comissao_imobiliaria,
-            comissao_corretor,
-            created_at,
-            updated_at,
-            user_id,
-            clientes:cliente_id (nome)
-          `)
+          .select('*, clientes:cliente_id(nome)')
           .order('data_venda', { ascending: false });
 
         if (error) {
