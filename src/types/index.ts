@@ -26,6 +26,7 @@ export interface Venda {
   tipoImovel: string;
   endereco: string; // Used instead of enderecoImovel in multiple components
   enderecoImovel?: string; // Keep for backwards compatibility
+  endereco_imovel?: string; // Adicionado para compatibilidade com Supabase
   observacoes?: string;
   comissao?: number; // From original type
   corretor?: string; // From original type

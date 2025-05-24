@@ -43,6 +43,9 @@ const DashboardComissaoAnual = () => {
   // Gráfico de status das comissões
   const [dadosDonutStatus, setDadosDonutStatus] = useState<any[]>([]);
 
+  // Adicione este estado para armazenar os valores recebidos/pendentes por comissão
+  const [valoresComissoes, setValoresComissoes] = useState<{[id: string]: {recebido: number, pendente: number}}>({});
+
   // Efeitos
   useEffect(() => {
     if (metaAnual) {
@@ -115,6 +118,29 @@ const DashboardComissaoAnual = () => {
     };
     calcularGraficos();
   }, [comissoes, anoSelecionado, anual_metaValor, getRecebimentosByComissaoId]);
+
+  // Calcule os valores recebidos/pendentes para cada comissão filtrada
+  useEffect(() => {
+    async function calcularValores() {
+      const novoMapa: {[id: string]: {recebido: number, pendente: number}} = {};
+      const comissoesFiltradas = comissoes
+        .filter(c => {
+          const dataVenda = new Date(c.dataVenda);
+          const anoMatch = dataVenda.getFullYear() === anoSelecionado;
+          const mesMatch = mesSelecionado === 'todos' || dataVenda.getMonth() === Number(mesSelecionado);
+          const statusMatch = statusFiltro === "todos" || c.status?.toLowerCase() === statusFiltro;
+          return anoMatch && mesMatch && statusMatch;
+        });
+      for (const c of comissoesFiltradas) {
+        const recebimentos = await getRecebimentosByComissaoId(c.id);
+        const recebido = recebimentos.reduce((acc, r) => acc + (r.valor || 0), 0);
+        const pendente = Math.max((c.valorComissaoCorretor || 0) - recebido, 0);
+        novoMapa[c.id] = { recebido, pendente };
+      }
+      setValoresComissoes(novoMapa);
+    }
+    calcularValores();
+  }, [comissoes, anoSelecionado, mesSelecionado, statusFiltro, getRecebimentosByComissaoId]);
 
   // Funções auxiliares
   const formatarMoeda = (valor: number) => {
@@ -382,10 +408,6 @@ const DashboardComissaoAnual = () => {
                   return anoMatch && mesMatch && statusMatch;
                 })
                 .map((comissao, idx) => {
-                  // Recebimentos e pendente (pode ser melhorado se já tiver esses dados em cache)
-                  // Aqui, para simplificação, mantemos o valor como antes
-                  const valorRecebido = 0; // Substitua por cálculo real se necessário
-                  const valorPendente = comissao.valorComissaoCorretor || 0; // Substitua por cálculo real se necessário
                   return (
                     <TableRow key={comissao.id} className={idx % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
                       <TableCell className="text-center py-3 font-medium text-slate-700">{format(new Date(comissao.dataVenda), "dd/MM/yyyy")}</TableCell>
@@ -394,8 +416,8 @@ const DashboardComissaoAnual = () => {
                       <TableCell className="text-center text-blue-900 font-bold">{formatarMoeda(comissao.valorVenda)}</TableCell>
                       <TableCell className="text-center text-green-700 font-bold">{formatarMoeda(comissao.valorComissaoCorretor)}</TableCell>
                       <TableCell className="text-center text-slate-600">{comissao.nota_fiscal || '-'}</TableCell>
-                      <TableCell className="text-center font-bold text-green-700">{valorRecebido > 0 ? formatarMoeda(valorRecebido) : 'R$ 0,00'}</TableCell>
-                      <TableCell className={`text-center font-bold ${valorPendente > 0 ? 'text-red-700' : 'text-slate-400'}`}>{valorPendente > 0 ? formatarMoeda(valorPendente) : 'R$ 0,00'}</TableCell>
+                      <TableCell className="text-center font-bold text-green-700">{formatarMoeda(valoresComissoes[comissao.id]?.recebido || 0)}</TableCell>
+                      <TableCell className={`text-center font-bold ${valoresComissoes[comissao.id]?.pendente > 0 ? 'text-red-700' : 'text-slate-400'}`}>{formatarMoeda(valoresComissoes[comissao.id]?.pendente || 0)}</TableCell>
                       <TableCell className="text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                         comissao.status?.toLowerCase() === "recebido" 

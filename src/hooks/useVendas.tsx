@@ -36,7 +36,8 @@ export const useVendas = () => {
             clienteId: venda.cliente_id,
             clienteNome: venda.clientes ? venda.clientes.nome : "Cliente não encontrado",
             tipoImovel: venda.tipo_imovel as any,
-            endereco: venda.endereco,
+            endereco: venda.endereco_imovel,
+            enderecoImovel: venda.endereco_imovel,
             valor: Number(venda.valor),
             dataVenda: venda.data_venda,
             comissao_imobiliaria: venda.comissao_imobiliaria !== undefined ? Number(venda.comissao_imobiliaria) : undefined,
@@ -72,7 +73,7 @@ export const useVendas = () => {
         .insert({
           cliente_id: venda.clienteId,
           tipo_imovel: venda.tipoImovel,
-          endereco: venda.endereco || venda.enderecoImovel,
+          endereco_imovel: venda.enderecoImovel,
           valor: venda.valor,
           data_venda: venda.dataVenda,
           observacoes: venda.observacoes,
@@ -92,7 +93,8 @@ export const useVendas = () => {
           clienteId: data[0].cliente_id,
           clienteNome: clienteNome,
           tipoImovel: data[0].tipo_imovel as any,
-          endereco: data[0].endereco,
+          endereco: data[0].endereco_imovel,
+          enderecoImovel: data[0].endereco_imovel,
           valor: Number(data[0].valor),
           dataVenda: data[0].data_venda,
           observacoes: data[0].observacoes || "",
@@ -106,15 +108,17 @@ export const useVendas = () => {
         await adicionarComissao({
           vendaId: novaVenda.id,
           cliente: clienteNome,
-          imovel: `${novaVenda.tipoImovel} - ${novaVenda.endereco}`,
+          imovel: novaVenda.enderecoImovel,
           valorVenda: novaVenda.valor,
           valorComissaoImobiliaria: 0, // Será preenchido depois
           valorComissaoCorretor: 0, // Será preenchido depois
           dataContrato: novaVenda.dataVenda,
           dataVenda: novaVenda.dataVenda,
           dataPagamento: null, // Campo obrigatório para o tipo
-          status: "Pendente"
-        });
+          status: "Pendente",
+          statusValor: "Atualizado",
+          nota_fiscal: ""
+        }, user.id, toast);
         
         toast({
           title: "Venda registrada",
@@ -167,7 +171,7 @@ export const useVendas = () => {
     try {
       const atualizacoes: any = {};
       if (vendaAtualizada.tipoImovel !== undefined) atualizacoes.tipo_imovel = vendaAtualizada.tipoImovel;
-      if (vendaAtualizada.endereco !== undefined) atualizacoes.endereco = vendaAtualizada.endereco;
+      if (vendaAtualizada.enderecoImovel !== undefined) atualizacoes.endereco_imovel = vendaAtualizada.enderecoImovel;
       if (vendaAtualizada.valor !== undefined) atualizacoes.valor = vendaAtualizada.valor;
       if (vendaAtualizada.dataVenda !== undefined) atualizacoes.data_venda = vendaAtualizada.dataVenda;
       if (vendaAtualizada.observacoes !== undefined) atualizacoes.observacoes = vendaAtualizada.observacoes;
@@ -193,9 +197,13 @@ export const useVendas = () => {
             const atualizacoesComissao: any = {};
             if (vendaAtualizada.comissao_imobiliaria !== undefined) {
               atualizacoesComissao.valorComissaoImobiliaria = vendaAtualizada.comissao_imobiliaria;
+            } else if (vendaAtualizada.comissaoImobiliaria !== undefined) {
+              atualizacoesComissao.valorComissaoImobiliaria = vendaAtualizada.comissaoImobiliaria;
             }
             if (vendaAtualizada.comissao_corretor !== undefined) {
               atualizacoesComissao.valorComissaoCorretor = vendaAtualizada.comissao_corretor;
+            } else if (vendaAtualizada.comissaoCorretor !== undefined) {
+              atualizacoesComissao.valorComissaoCorretor = vendaAtualizada.comissaoCorretor;
             }
             if (vendaAtualizada.valor !== undefined) {
               atualizacoesComissao.valorVenda = vendaAtualizada.valor;

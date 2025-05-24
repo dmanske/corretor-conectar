@@ -23,7 +23,7 @@ export const fetchComissoes = async (userId: string | undefined) => {
       id: comissao.id,
       vendaId: comissao.venda_id,
       cliente: comissao.cliente,
-      imovel: comissao.imovel,
+      imovel: comissao.imovel || comissao.endereco_imovel,
       valorVenda: comissao.valor_venda,
       valorComissaoImobiliaria: comissao.valor_comissao_imobiliaria,
       valorComissaoCorretor: comissao.valor_comissao_corretor,
